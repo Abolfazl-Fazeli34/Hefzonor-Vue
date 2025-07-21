@@ -22,16 +22,15 @@
           <!-- نام سوره -->
           <div class="d-flex justify-content-center flex-wrap gap-1">
             <span v-for="x in surahTitleItems" :key="x.id" class="fw-bold surah-title">
-              {{ x.word }}
+              سوره {{ x.name }}
             </span>
           </div>
 
           <!-- بسم‌الله -->
           <div class="d-flex justify-content-center flex-wrap gap-1 mt-3">
-            <span v-for="x in secondLineItems" :key="x.id"
-              :class="x.type === 3 ? 'basmala word-hover' : 'normal-word word-hover'">
-              {{ x.type === 3 ? `﴿${x.word}﴾` : x.word }}
-            </span>
+            <div v-for="x in secondLineItems" :key="x.id">
+              <span v-for="word in x.bismillah" :key='word.id' style="font-size: 2.4rem;" :class="x.type === 3 ? 'basmala word-hover QCF_BSML' : 'normal-word word-hover QCF_BSML'">{{ word.code }}</span>
+            </div>
           </div>
 
           <!-- بخش صوت صفحه با آیکون و متن کنار هم -->
@@ -59,11 +58,10 @@
                 style="line-height: 3.2rem; justify-content: center; align-items: center;gap: 2px;"
               >
                 <template v-for="y in group.items.filter(i => i.line === x.line)" :key="y.id">
-                 <span
-                  :class="[y.type == 3 ? 'basmala word-hover fontSizeNumber' : 'normal-word word-hover custom-font', 'font-' + y.fontName]"
-                  :style="(y.type == 1 ? 'font-size: 2.5rem;': ''), (y.type == 2 ? 'font-size: 3.3rem;' : ''), (y.type == 3 ? 'font-size: 1.3rem;': '')">
-                  {{ y.type === 3 ? `﴿${y.word}﴾` : y.code }}
+                <span @click="$emit('wordClicked', y)" :class="[y.type == 3 ? 'basmala word-hover fontSizeNumber' : 'normal-word word-hover custom-font', 'font-' + y.fontName]" :style="(y.type == 1 ? 'font-size: 2.5rem;' : ''), (y.type == 2 ? 'font-size: 3.3rem;' : ''), (y.type == 3 ? 'font-size: 1.3rem;' : '')">
+                  {{ y.type === 3 ? `﴿${y.code}﴾` : y.code }}
                 </span>
+
 
                 </template>
               </div>
@@ -77,11 +75,20 @@
           </div>
 
           <!-- دکمه‌های جابه‌جایی سوره -->
-          <div class="d-flex justify-content-between mt-4">
-            <button @click="goToPrevSurah" :disabled="surahno <= 1" class="btn btn-outline-light">
+          <div class="d-flex justify-content-between mt-4" v-show="surahno !== null">
+            <button 
+              @click="goToPrevSurah" 
+              :disabled="surahno <= 1 || !allSurahPagesLoaded" 
+              class="btn btn-outline-light"
+            >
               ▶ سوره قبلی
             </button>
-            <button @click="goToNextSurah" :disabled="surahno >= maxSurah" class="btn btn-outline-light">
+
+            <button 
+              @click="goToNextSurah" 
+              :disabled="surahno >= maxSurah || !allSurahPagesLoaded" 
+              class="btn btn-outline-light"
+            >
               سوره بعدی ◀
             </button>
           </div>
@@ -109,14 +116,14 @@ export default {
       activeTab: 'tab1',
       surahTitleItems: [],
       secondLineItems: [],
-      filteredItems: [],
+      filteredItems: [],    // آرایه‌ای از صفحات و کلمات هر صفحه
       surahno: null,
       maxSurah: 114,
       audioData: null,
       qari: 1,
       sure: 1,
       page: 1,
-      srcSound:null,
+      srcSound: null,
       contentStyle: {
         backgroundColor: 'var(--bg-dark)',
         color: 'white',
@@ -127,7 +134,9 @@ export default {
         textJustify: 'inter-word',
       },
       numberPage: '',
-      fontName:'',
+      fontName: '',
+      nextVersesUrl: null,   // برای نگهداری لینک صفحه بعدی pagination آیات
+      loadingNext: false,    // برای جلوگیری از درخواست‌های همزمان در infinite scroll
     };
   },
   watch: {
@@ -135,14 +144,48 @@ export default {
       immediate: true,
       handler(newVal) {
         this.surahno = newVal;
+        this.resetSurah();
         this.loadSurah();
       }
     },
   },
+  computed: {
+    allSurahPagesLoaded() {
+      // فرض بر اینکه آخرین صفحه سوره صفحه‌ی بزرگترین شماره صفحه در filteredItems است
+      if (!this.filteredItems.length) return false;
+      const loadedPages = this.filteredItems.map(group => group.page);
+      const maxPageLoaded = Math.max(...loadedPages);
+      return this.nextVersesUrl === null && maxPageLoaded !== 0;
+    }
+  },
+  mounted() {
+    window.addEventListener('scroll', this.handleScroll);
+  },
+  beforeUnmount() {
+    window.removeEventListener('scroll', this.handleScroll);
+  },
   methods: {
+    resetSurah() {
+      this.filteredItems = [];
+      this.surahTitleItems = [];
+      this.secondLineItems = [];
+      this.nextVersesUrl = null;
+    },
+    handleScroll() {
+      // وقتی صفحه نزدیک پایین می‌شود و صفحه بعدی موجود است و هنوز درخواست قبلی تمام نشده نیست، بارگذاری صفحه بعدی انجام شود
+      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 300) {
+        if (this.nextVersesUrl && !this.loadingNext) {
+          this.loadingNext = true;
+          this.loadSurah(this.nextVersesUrl).finally(() => {
+            this.loadingNext = false;
+          });
+        }
+      }
+    },
     goToNextSurah() {
       if (this.surahno < this.maxSurah) {
         this.surahno++;
+        this.resetSurah();
         this.loadSurah();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -150,95 +193,118 @@ export default {
     goToPrevSurah() {
       if (this.surahno > 1) {
         this.surahno--;
+        this.resetSurah();
         this.loadSurah();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
-    loadSurah() {
-      axios
-        .get(`http://localhost:8000/quran/quran15/?surah=${this.surahno}`)
+    loadSurah(url = null) {
+      const apiUrl = url || `http://localhost:8000/quran/surahs/?id=${this.surahno}&name=&english_name=&juz=&page_number=`;
+
+      return axios
+        .get(apiUrl)
         .then((response) => {
-          this.surahTitleItems = response.data.title || [];
-          this.secondLineItems = response.data.bismillah || [];
-          const ayahData = response.data.ayah || {};
+          if (!response.data.results.length) return;
 
-          this.filteredItems = [];
+          const surah = response.data.results[0];
 
-          const fontSet = new Set();
+          // فقط اگر سوره خالی باشد، عنوان و بسم الله را ست کن
+          if (!this.surahTitleItems.length) {
+            this.surahTitleItems = [surah];
+            this.secondLineItems = [surah];
+          }
 
-          for (const page in ayahData) {
-            const items = ayahData[page];
+          const allWords = [];
 
-            items.forEach(item => {
-              if (item.fontName && item.fontPage) {
-                fontSet.add(item.fontName + '|' + item.fontPage);
+          if (surah.verses && surah.verses.results) {
+            surah.verses.results.forEach(verse => {
+              if (verse.words && Array.isArray(verse.words)) {
+                verse.words.forEach(word => {
+                  allWords.push(word);
+                });
               }
-            });
-
-            this.filteredItems.push({
-              page: Number(page),
-              items: items
             });
           }
 
+          const groupedByPage = {};
+          const fontSet = new Set();
+
+          allWords.forEach(word => {
+            const page = word.page || 0;
+            if (!groupedByPage[page]) {
+              groupedByPage[page] = [];
+            }
+            groupedByPage[page].push(word);
+
+            if (word.fontName && word.fontPage) {
+              fontSet.add(`${word.fontName}|${word.fontPage}`);
+            }
+          });
+
+          // هر صفحه جدید را به filteredItems اضافه کن یا اگر وجود داشت الحاق کن
+          Object.keys(groupedByPage).forEach(page => {
+            const existing = this.filteredItems.find(p => p.page === Number(page));
+            const sortedItems = groupedByPage[page].sort((a, b) => a.line - b.line || a.word_number - b.word_number);
+
+            if (existing) {
+              // اضافه کردن فقط مواردی که قبلاً وجود ندارند (جلوگیری از تکراری شدن)
+              const existingIds = new Set(existing.items.map(i => i.id));
+              const newItems = sortedItems.filter(item => !existingIds.has(item.id));
+              existing.items.push(...newItems);
+            } else {
+              this.filteredItems.push({
+                page: Number(page),
+                items: sortedItems
+              });
+            }
+          });
+
+          // بارگذاری فونت‌ها
           fontSet.forEach(fontStr => {
             const [fontName, fontPage] = fontStr.split('|');
             this.loadFont(fontName, fontPage);
           });
 
+          // صفحه بعدی pagination آیات
+          this.nextVersesUrl = surah.verses.next;
         })
         .catch((err) => {
           console.error('Axios error:', err);
         });
     },
-
-    playSound() {
-      axios
-        .get(`http://localhost:8000/audio/get-page-audio/?qari=${this.qari}&sure=${this.sure}&page=${this.page}`)
-        .then(response => {
-          this.audioData = response.data.url; 
-          this.$emit('send-audio-data', this.audioData);
-          console.log(this.numberPage);
-          // console.log(this.audioData);
-
-          // console.log('Audio data:', this.audioData);
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    },
     loadFont(fontName, fontPath) {
-    // بررسی اینکه آیا این فونت قبلاً لود شده
-    if (document.getElementById(`font-style-${fontName}`)) return;
+      if (document.getElementById(`font-style-${fontName}`)) return;
 
-    const style = document.createElement('style');
-    style.id = `font-style-${fontName}`;
-    console.log()
-    style.innerHTML = `
-      @font-face {
-        font-family: '${fontName}';
-        src: url('${fontPath}');
-      }
-      .font-${fontName} {
-        font-family: '${fontName}';
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
+      const style = document.createElement('style');
+      style.id = `font-style-${fontName}`;
+      style.innerHTML = `
+        @font-face {
+          font-family: '${fontName}';
+          src: url('${fontPath}');
+        }
+        .font-${fontName} {
+          font-family: '${fontName}';
+        }
+      `;
+      document.head.appendChild(style);
+    },
+    playSound() {
+      // این متد در صورت نیاز فعال شود
+    }
   }
 };
 </script>
 
+
 <style scoped>
 
-/* @font-face {
-  font-family: 'QCF_P001';
-  src: url('/public/fonts/QCF_P001.TTF');
+@font-face {
+  font-family: 'QCF_BSML';
+  src: url('/public/fonts/QCF_BSML.TTF');
 }
-.custom-font {
-  font-family: 'QCF_P001', sans-serif;
-} */
+.QCF_BSML {
+  font-family: 'QCF_BSML', sans-serif;
+}
 
 .fontSizeNumber{
   font-size: 1rem;

@@ -11,7 +11,7 @@
     <SideMenu :isOpen="isMenuOpen" @close="closeMenu" @selectSurah="handleSurahSelected" />
 
     <!-- Main Content -->
-    <TabbedContent  :id_sure="id_sure" @send-audio-data="handleAudioData"/>
+    <TabbedContent  :id_sure="id_sure" @send-audio-data="handleAudioData" :filtered-items="filteredItems" @wordClicked="handleWordClick"/>
 
     <!-- Audio Player -->
     <AudioPlayer :data="audioDataFromChild" />
@@ -41,6 +41,7 @@ export default {
       isMenuOpen: false,
       id_sure: 1, 
       audioDataFromChild: '',
+      selectedWord: null
     }
   },
   methods: {
@@ -56,6 +57,10 @@ export default {
     handleAudioData(data) {
       this.audioDataFromChild = data;
       console.log("دریافت صوت:", data);
+    },
+    handleWordClick(word) {
+      console.log('کلمه کلیک شده:', word);
+      this.selectedWord = word;
     }
   }
 }
