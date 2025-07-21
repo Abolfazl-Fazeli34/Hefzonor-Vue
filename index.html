@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quran Header + Info Bar</title>
+
+  <!-- Bootstrap RTL -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <!-- Google Font: Vazirmatn -->
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet" />
+  <!-- link icon music player -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.2/css/all.min.css"/>
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-darker: #0e1523;
+      --text-light: #ffffff;
+      --text-muted: #9ca3af;
+      --text-accent: #22c55e;
+      --border-color: #1f2937;
+      --icon-hover: #38bdf8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Vazirmatn', sans-serif;
+      background-color: var(--bg-darker);
+      color: var(--text-light);
+    }
+
+    header {
+      background-color: var(--bg-dark);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1.5rem;
+      z-index: 999;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-accent);
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    .logo i {
+      font-size: 1.7rem;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: var(--text-light);
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .icon-button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .icon-button:hover {
+      color: var(--icon-hover);
+    }
+
+    .lang-select {
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-light);
+      border-radius: 5px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.9rem;
+    }
+
+    .info-bar {
+      background-color: var(--bg-dark);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 998;
+      transition: all 0.3s ease;
+    }
+
+    .fixed-info-bar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .sura-name {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--text-light);
+    }
+
+    .details {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .custom-offcanvas {
+      position: fixed;
+      top: 72px;
+      right: -250px;
+      width: 250px;
+      height: 100%;
+      background-color: var(--bg-dark);
+      color: white;
+      z-index: 1000;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+    }
+
+    .custom-offcanvas.show {
+      right: 0;
+    }
+
+    .page-content.shifted {
+      transform: translateX(-250px);
+      transition: transform 0.3s ease;
+    }
+
+    .custom-offcanvas .offcanvas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid #333;
+    }
+
+    .custom-offcanvas .btn-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .list-group-item {
+      background: transparent;
+      color: white;
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        display: none;
+      }
+    }
+    @import url('https://fonts.googleapis.com/css?family=Lato&display=swap');
+
+  .music-container {
+    background-color: var(--bg-dark);
+    position: fixed;
+    bottom: 0px;
+    display: flex;
+    padding: 20px 30px;
+    z-index: 10;
+    width:100%;
+  }
+
+  .img-container {
+    position: relative;
+    width: 110px;
+  }
+
+  .img-container::after {
+    content: '';
+    background-color: #fff;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    transform: translate(-50%, 50%);
+  }
+
+
+  .music-container.play .img-container img {
+    animation-play-state: running;
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .navigation {
+    display: flex;
+    
+    align-items: center;
+    justify-content: space;
+    z-index: 1;
+  }
+
+  .action-btn {
+    border: 0;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .action-btn.action-btn-big {
+    color: #cdc2d0;
+    font-size: 30px;
+  }
+
+  .action-btn:focus {
+    outline: 0;
+  }
+
+  .music-info {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 15px 15px 0 0;
+    position: absolute;
+    top: 0;
+    left: 20px;
+    width: calc(100% - 40px);
+    padding: 10px 10px 10px 150px;
+    opacity: 0;
+    transform: translateY(0%);
+    transition: transform 0.3s ease-in, opacity 0.3s ease-in;
+    z-index: 0;
+  }
+
+  .music-container.play .music-info {
+    opacity: 1;
+    transform: translateY(-100%);
+  }
+
+  .music-info h4 {
+    margin: 0;
+  }
+
+  .progress-container {
+    background: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px 0;
+    height: 4px;
+    width: 100%;
+  }
+
+  .progress {
+    background-color: #fe8daa;
+    border-radius: 5px;
+    height: 100%;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+  </style>
+</head>
+<body>
+
+  <!-- هدر -->
+  <header>
+    <a href="#" class="logo"><i class="fas fa-quran"></i> Quran</a>
+
+    <nav>
+      <a href="#"><i class="fas fa-fire"></i> ترند</a>
+      <a href="#"><i class="fas fa-headphones"></i> قرائت</a>
+      <a href="#"><i class="fas fa-bookmark"></i> نشانه‌ها</a>
+    </nav>
+
+    <div class="actions">
+      <button class="icon-button" title="جستجو"><i class="fas fa-search"></i></button>
+      <select class="lang-select">
+        <option value="fa">فا</option>
+        <option value="en">EN</option>
+        <option value="ar">AR</option>
+      </select>
+      <button class="icon-button"><i class="fas fa-user-circle"></i></button>
+    </div>
+  </header>
+
+  <!-- نوار اطلاعات -->
+  <section class="info-bar" id="infoBar">
+    <div class="sura-name">
+      <button id="toggleMenuBtn" class="btn text-light"><i class="fas fa-bars"></i></button>
+      <span>Al-Ma'idah</span>
+    </div>
+    <div class="details">Juz 6 / Hizb 11 - Page 106</div>
+  </section>
+
+  <!-- منوی کناری -->
+  <div id="sideMenu" class="custom-offcanvas">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">منوی اصلی</h5>
+      <button id="closeMenuBtn" class="btn-close">&times;</button>
+    </div>
+    <div class="offcanvas-body px-2">
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item border-0">سوره الفاتحه</li>
+        <li class="list-group-item border-0">سوره البقره</li>
+        <li class="list-group-item border-0">سوره آل‌عمران</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- محتوای اصلی -->
+  <main id="pageContent" class="page-content container my-4 p-4 rounded" style="background-color: var(--bg-dark); min-height: 300px;">
+    <!-- تب‌بندی -->
+    <ul class="nav nav-tabs justify-content-center gap-2" id="tabExample" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active" id="tab1-tab" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab">گزینه اول</button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" id="tab2-tab" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab">گزینه دوم</button>
+      </li>
+    </ul>
+
+    <div class="tab-content mt-4">
+      <div class="tab-pane fade show active card p-4" id="tab1" role="tabpanel" style="background-color: var(--bg-darker); border: 1px solid var(--text-accent);">
+        این محتوای گزینه اول است. می‌توانید هر چیزی را اینجا قرار دهید.
+      </div>
+      <div class="tab-pane fade card p-4 mt-3" id="tab2" role="tabpanel" style="background-color: var(--bg-darker); border: 1px solid var(--text-accent);">
+        این محتوای گزینه دوم است. متن دلخواه خود را اینجا بنویسید.
+      </div>
+    </div>
+  </main>
+
+
+  <!-- music player -->
+  <div class="music-container" id="music-container">
+      <div class="music-info">
+        <h4 id="title"></h4>
+        <div class="progress-container" id="progress-container">
+          <div class="progress" id="progress"></div>
+        </div>
+      </div>
+
+      <audio src="music/ukulele.mp3" id="audio"></audio>
+      <div class="navigation">
+        <button id="prev" class="action-btn">
+          <i class="fas fa-backward"></i>
+        </button>
+        <button id="play" class="action-btn action-btn-big">
+          <i class="fas fa-play"></i>
+        </button>
+        <button id="next" class="action-btn">
+          <i class="fas fa-forward"></i>
+        </button>
+      </div>
+    </div>
+    <div class="">
+
+    </div>
+  <!-- اسکریپت‌ها -->
+  <script>
+    const infoBar = document.getElementById('infoBar');
+    const toggleBtn = document.getElementById('toggleMenuBtn');
+    const closeBtn = document.getElementById('closeMenuBtn');
+    const sideMenu = document.getElementById('sideMenu');
+    const pageContent = document.getElementById('pageContent');
+    const initialOffsetTop = infoBar.offsetTop;
+
+    window.addEventListener('scroll', () => {
+      infoBar.classList.toggle('fixed-info-bar', window.scrollY > initialOffsetTop);
+    });
+
+    toggleBtn.addEventListener('click', () => {
+      const isOpen = sideMenu.classList.contains('show');
+      sideMenu.classList.toggle('show');
+      pageContent.classList.toggle('shifted', !isOpen);
+    });
+
+    closeBtn.addEventListener('click', () => {
+      sideMenu.classList.remove('show');
+      pageContent.classList.remove('shifted');
+    });
+  </script>
+  
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
