@@ -3,7 +3,12 @@
     <div class="offcanvas-header" style="display: flex; flex-direction: column;">
       <div class="d-flex align-items-center justify-content-between w-100 mb-2">
         <div class="offcanvas-title">
-          <span v-for="x in hefztype" :key="x" @click="goPage(x)" style="background-color: var(--bg-dark); color: white; margin: 2px 3px; cursor: pointer; padding: 3.5px 7px; border: 0.5px solid white; border-radius: 5px; font-size: 14px;">
+          <span
+            v-for="x in hefztype"
+            :key="x"
+            @click="goPage(x)"
+            style="background-color: var(--bg-dark); color: white; margin: 2px 3px; cursor: pointer; padding: 3.5px 7px; border: 0.5px solid white; border-radius: 5px; font-size: 14px;"
+          >
             {{ x }}
           </span>
         </div>
@@ -12,48 +17,52 @@
         </button>
       </div>
       <div style="margin-top: 10px;">
-        <input type="text" class="form-control" style="background-color: var(--bg-dark); color: white" placeholder="جستجوی سوره"/>
+        <input
+          type="text"
+          class="form-control"
+          style="background-color: var(--bg-dark); color: white"
+          placeholder="جستجوی سوره / صفحه / جزء"
+        />
       </div>
     </div>
     <div class="offcanvas-body px-2">
       <ul class="list-group list-group-flush" style="margin-top: 123px;">
-        <div v-if="list_bar">
-          <li v-for="x in list_bar" :key="x.id" dir="rtl" class="list-group-item border-0 d-flex align-items-center mt-2 list-hover"@click="gotosure(x.id)"style="cursor: pointer;">
-            <div v-if="x.sure" class="d-flex align-item-center">
-              <div style="margin-left: 25px;">
-                {{ x.id }}
-              </div>
-              {{ x.sure }}
+        <li
+          v-for="x in list_bar"
+          :key="x.id"
+          dir="rtl"
+          class="list-group-item border-0 d-flex align-items-center mt-2 list-hover"
+          style="cursor: pointer;"
+        >
+          <!-- اگر داده سوره است -->
+          <template v-if="x.arabic_name">
+            <div @click="gotosure(x.id)" class="d-flex align-items-center w-100">
+              <div style="margin-left: 25px;">{{ x.id }}</div>
+              <div>{{ x.arabic_name }}</div>
             </div>
-            <div v-else-if="x.joz" class="d-flex align-item-center" @click="goToJoz(x.joz)">
-              <div style="margin-left: 25px;">
-                {{ x.id }}
-              </div>
-              {{ x.joz }}
+          </template>
+
+          <!-- اگر داده جزء (juz) است -->
+          <template v-else-if="x.juz">
+            <div @click="goToJoz(x.juz)" class="d-flex align-items-center w-100">
+              <div style="margin-left: 25px;">{{ x.id }}</div>
+              <div>{{ x.juz }}</div>
             </div>
-            
-            <div v-else class="d-flex align-item-center">
-              <div style="margin-left: 25px;">
-                {{ x.id }}
-              </div>
-              {{ x.page }}
+          </template>
+
+          <!-- اگر داده صفحه است -->
+          <template v-else-if="x.page">
+            <div class="d-flex align-items-center w-100">
+              <div style="margin-left: 25px;">{{ x.id }}</div>
+              <div>{{ x.page }}</div>
             </div>
-          </li>
-        </div>
-        <div v-else>
-          <li v-for="x in list_bar" :key="x.id" dir="rtl" class="list-group-item border-0 d-flex align-items-center mt-2 list-hover"@click="gotosure(x.id)"style="cursor: pointer;">
-            <div v-if="x.sure" class="d-flex align-item-center">
-              <div style="margin-left: 25px;">
-                {{ x.id }}
-              </div>
-              {{ x.sure }}
-            </div>
-          </li>
-        </div>
+          </template>
+        </li>
       </ul>
     </div>
   </div>
 </template>
+
 
 <script>
 import axios from 'axios'
@@ -61,14 +70,15 @@ import axios from 'axios'
 export default {
   name: 'SideMenu',
   props: {
-    isOpen: Boolean
+    isOpen: Boolean,
+    
   },
   emits: ['close'],
   data() {
     return {
       isFixed: false,
       list_bar: [],
-      hefztype: ['joz', 'sure', 'page'], 
+      hefztype: ['juz', 'sure', 'page'], 
     }
   },
   computed: {
@@ -83,7 +93,7 @@ export default {
   },
   methods: {
     updateStyle() {
-      this.isFixed = window.scrollY > 72
+      this.isFixed = window.scrollY > 170
     },
     emitClose() {
       this.$emit('close')
@@ -98,31 +108,31 @@ export default {
         })
     },
     listSure(){
-      axios.get('http://localhost:8000/quran/list-quran/?type=sures')
+      axios.get('http://localhost:8000/quran/list/combined/?type=surah')
         .then((response) => {
           this.list_bar = response.data.sures;
-          console.log(response.data);
+          // console.log(response.data);
         })
         .catch((error) => console.log({'error': error}));
     },
     goPage(type) {
-      if (type == 'joz'){
-        axios.get('http://localhost:8000/quran/list-quran/?type=jozs')
+      if (type == 'juz'){
+        axios.get('http://localhost:8000/quran/list/combined/?type=juz')
         .then((response) => {
-          this.list_bar = response.data.jozs;
+          this.list_bar = response.data;
           // console.log(response.data.jozs[1].joz);
         })
         .catch((error) => {console.log({'error': error})});
       }else if (type == 'page'){
-        axios.get('http://localhost:8000/quran/list-quran/?type=pages')
+        axios.get('http://localhost:8000/quran/list/combined/?type=page')
         .then((response) => {
-          this.list_bar = response.data.pages;
+          this.list_bar = response.data;
         }).catch((error) => console.log({'error': error}));
       }else if (type == 'sure'){
-        axios.get('http://localhost:8000/quran/list-quran/?type=sures')
+        axios.get('http://localhost:8000/quran/list/combined/?type=surah')
         .then((response) => {
-          this.list_bar = response.data.sures;
-          console.log(response.data);
+          this.list_bar = response.data;
+          // console.log(response.data);
         })
         .catch((error) => console.log({'error': error}));
       }else{
@@ -158,6 +168,7 @@ export default {
     window.addEventListener('scroll', this.updateStyle);
     this.loadSures();
     this.listSure();
+    this.goPage('sure');
   },
   beforeUnmount() {
     window.removeEventListener('scroll', this.updateStyle);

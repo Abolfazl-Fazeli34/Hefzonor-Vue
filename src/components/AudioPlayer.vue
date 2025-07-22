@@ -66,7 +66,8 @@
 export default {
   name: 'AudioPlayer',
   props: {
-    data: String  // فقط آدرس فایل صوتی
+    data: String,
+    // selectedWord: Array,
   },
   data() {
     return {
@@ -162,6 +163,9 @@ export default {
     onDocumentClick(e) {
       if (!e.target.closest('.menu-group')) this.showMenu = false;
       if (!e.target.closest('.volume-group')) this.showVolume = false;
+    },
+    handleWordClick(word) {
+      this.selectedWord = word;
     }
   }
 };

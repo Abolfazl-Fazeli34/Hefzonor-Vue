@@ -8,13 +8,13 @@
     <InfoBar @toggle-menu="toggleMenu" />
 
     <!-- Side Menu -->
-    <SideMenu :isOpen="isMenuOpen" @close="closeMenu" @selectSurah="handleSurahSelected" />
+    <SideMenu :isOpen="isMenuOpen" @close="closeMenu" @selectSurah="handleSurahSelected" :selectedWord="selectedWord"/>
 
     <!-- Main Content -->
     <TabbedContent  :id_sure="id_sure" @send-audio-data="handleAudioData" :filtered-items="filteredItems" @wordClicked="handleWordClick"/>
 
     <!-- Audio Player -->
-    <AudioPlayer :data="audioDataFromChild" />
+    <AudioPlayer :data="audioDataFromChild" :selectedWord="selectedWord"/>
     <router-view />
   </div>
 </template>
