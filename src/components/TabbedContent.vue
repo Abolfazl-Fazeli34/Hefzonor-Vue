@@ -1,5 +1,5 @@
 <template>
-  <div class="container my-4 p-4 rounded page-content">
+  <div class="my-4 p-4 rounded page-content" style="max-width: 950px; margin: 0 auto;">
     <!-- تب‌ها -->
     <ul class="nav nav-tabs justify-content-center gap-2" id="tabExample" role="tablist">
       <li class="nav-item" role="presentation">
@@ -29,19 +29,21 @@
           <!-- بسم‌الله -->
           <div class="d-flex justify-content-center flex-wrap gap-1 mt-3">
             <div v-for="x in secondLineItems" :key="x.id">
-              <span v-for="word in x.bismillah" :key='word.id' style="font-size: 2.4rem;" :class="x.type === 3 ? 'basmala word-hover QCF_BSML' : 'normal-word word-hover QCF_BSML'">{{ word.code }}</span>
+              <span v-for="word in x.bismillah" :key="word.id" style="font-size: 2.4rem;"
+                    :class="word.type === 3 ? 'basmala word-hover QCF_BSML' : 'normal-word word-hover QCF_BSML'">
+                {{ word.code }}
+              </span>
             </div>
           </div>
 
           <!-- بخش صوت صفحه با آیکون و متن کنار هم -->
           <div class="d-flex justify-content-between align-items-center mt-3" style="max-width: 80%; margin: 0 auto;">
-            <!-- دکمه پخش (راست) -->
-            <button type="button" class="button btn p-0 text-white d-flex align-items-center gap-2" style="margin-top: 4px;" @click="playSound()">
+            <button type="button" class="button btn p-0 text-white d-flex align-items-center gap-2"
+                    style="margin-top: 4px;" @click="playSound()">
               <i class="bi bi-play-fill fs-5"></i>
               <span>بخش صوت</span>
             </button>
 
-            <!-- دکمه تنظیمات (چپ) -->
             <button type="button" class="button btn p-0 text-secondary">
               <i class="bi bi-gear-fill fs-5"></i>
             </button>
@@ -59,7 +61,7 @@
               >
                 <template v-for="y in group.items.filter(i => i.line === x.line)" :key="y.id">
                   <span
-                    @click.stop="toggleTooltip(y.id) & playAudioWord(y, surahno)"
+                    @click.stop="toggleTooltip(y.id); playAudioWord(y, surahno)"
                     :class="[
                       y.type == 3 ? 'basmala word-hover fontSizeNumber' : 'normal-word word-hover custom-font',
                       'font-' + y.fontName,
@@ -69,7 +71,7 @@
                   >
                     {{ y.type === 3 ? `﴿${y.code}﴾` : y.code }}
 
-                    <!-- تولتیپ مشابه AudioPlayer -->
+                    <!-- تولتیپ -->
                     <div
                       v-if="activeTooltipId === y.id"
                       class="custom-tooltip"
@@ -77,8 +79,10 @@
                     >
                       <div class="d-flex justify-content-between align-items-center mb-2">
                         <small class="text-light">{{ y.code }}</small>
-                        <button type="button" class="btn-close btn-close-white btn-sm" style="font-size: 16px;" aria-label="بستن" @click="closeTooltip"></button>
+                        <button type="button" class="btn-close btn-close-white btn-sm"
+                                style="font-size: 16px;" aria-label="بستن" @click="closeTooltip"></button>
                       </div>
+
                       <div class="d-flex justify-content-around gap-2">
                         <button type="button" class="btn btn-sm btn-outline-light" @click="playAudioWord(y)">
                           <i class="bi bi-play-fill"></i>
@@ -86,12 +90,13 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary" @click="copyWord(y.arabic_text)">
                           <i class="bi bi-clipboard"></i>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" @click.prevent>
-                          <i class="bi bi-three-dots"></i>
-                        </button>
+                        <router-link :to="`/quran/details/${surahno}/${y.verse_number}`">
+                          <button type="button" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-three-dots"></i>
+                          </button>
+                        </router-link>
                       </div>
                     </div>
-
                   </span>
                 </template>
               </div>
@@ -108,7 +113,7 @@
           <div class="d-flex justify-content-between mt-4" v-show="surahno !== null">
             <button
               @click="goToPrevSurah"
-              :disabled="surahno <= 1 || !allSurahPagesLoaded"
+              :disabled="surahno <= 1"
               class="btn btn-outline-light"
             >
               ▶ سوره قبلی
@@ -116,7 +121,7 @@
 
             <button
               @click="goToNextSurah"
-              :disabled="surahno >= maxSurah || !allSurahPagesLoaded"
+              :disabled="surahno >= maxSurah"
               class="btn btn-outline-light"
             >
               سوره بعدی ◀
@@ -134,252 +139,249 @@
 </template>
 
 
-<script>
+
+<script setup>
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import axios from 'axios';
 
-export default {
-  name: 'TabbedContent',
-  props: {
-    id_sure: Number,
-  },
-  data() {
-    return {
-      activeTab: 'tab1',
-      surahTitleItems: [],
-      secondLineItems: [],
-      filteredItems: [], // آرایه‌ای از صفحات و کلمات هر صفحه
-      surahno: null,
-      maxSurah: 114,
-      audioData: null,
-      qari: 1,
-      sure: 1,
-      page: 1,
-      srcSound: null,
-      contentStyle: {
-        backgroundColor: 'var(--bg-dark)',
-        color: 'white',
-        border: 'none',
-        maxWidth: '690px',
-        margin: '0 auto',
-        textAlign: 'justify',
-        textJustify: 'inter-word',
-      },
-      numberPage: '',
-      fontName: '',
-      nextVersesUrl: null, // برای نگهداری لینک صفحه بعدی pagination آیات
-      loadingNext: false, // برای جلوگیری از درخواست‌های همزمان در infinite scroll
-      audioSrc: null,
-      activeTooltipId: null,  // شناسه‌ی کلمه فعال برای نمایش تولتیپ
-    };
-  },
-  watch: {
-    id_sure: {
-      immediate: true,
-      handler(newVal) {
-        this.surahno = newVal;
-        this.resetSurah();
-        this.loadSurah();
-      },
-    },
-  },
-  computed: {
-    allSurahPagesLoaded() {
-      if (!this.filteredItems.length) return false;
-      const loadedPages = this.filteredItems.map((group) => group.page);
-      const maxPageLoaded = Math.max(...loadedPages);
-      return this.nextVersesUrl === null && maxPageLoaded !== 0;
-    },
-  },
-  mounted() {
-    window.addEventListener('scroll', this.handleScroll);
-  },
-  beforeUnmount() {
-    window.removeEventListener('scroll', this.handleScroll);
-  },
-  methods: {
-    resetSurah() {
-      this.filteredItems = [];
-      this.surahTitleItems = [];
-      this.secondLineItems = [];
-      this.nextVersesUrl = null;
-      this.activeTooltipId = null;
-      this.audioSrc = null;
-    },
-    handleScroll() {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
-        if (this.nextVersesUrl && !this.loadingNext) {
-          this.loadingNext = true;
-          this.loadSurah(this.nextVersesUrl).finally(() => {
-            this.loadingNext = false;
-          });
-        }
-      }
-    },
-    goToNextSurah() {
-      if (this.surahno < this.maxSurah) {
-        this.surahno++;
-        this.resetSurah();
-        this.loadSurah();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    },
-    goToPrevSurah() {
-      if (this.surahno > 1) {
-        this.surahno--;
-        this.resetSurah();
-        this.loadSurah();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    },
-    loadSurah(url = null) {
-      const apiUrl =
-        url || `http://localhost:8000/quran/surahs/?id=${this.surahno}&name=&english_name=&juz=&page_number=`;
+const props = defineProps({
+  id_sure: Number
+});
 
-      return axios
-        .get(apiUrl)
-        .then((response) => {
-          if (!response.data.results.length) return;
+// متغیرها
+const activeTab = ref('tab1');
+const surahTitleItems = ref([]);
+const secondLineItems = ref([]);
+const filteredItems = ref([]);
+const surahno = ref(null);
+const maxSurah = ref(114);
+const nextVersesUrl = ref(null);
+const loadingNext = ref(false);
+const audioSrc = ref(null);
+const activeTooltipId = ref(null);
 
-          const surah = response.data.results[0];
-
-          if (!this.surahTitleItems.length) {
-            this.surahTitleItems = [surah];
-            this.secondLineItems = [surah];
-          }
-
-          const allWords = [];
-
-          if (surah.verses && surah.verses.results) {
-            surah.verses.results.forEach((verse) => {
-              if (verse.words && Array.isArray(verse.words)) {
-                verse.words.forEach((word) => {
-                  allWords.push(word);
-                });
-              }
-            });
-          }
-
-          const groupedByPage = {};
-          const fontSet = new Set();
-
-          allWords.forEach((word) => {
-            const page = word.page || 0;
-            if (!groupedByPage[page]) {
-              groupedByPage[page] = [];
-            }
-            groupedByPage[page].push(word);
-
-            if (word.fontName && word.fontPage) {
-              fontSet.add(`${word.fontName}|${word.fontPage}`);
-            }
-          });
-
-          Object.keys(groupedByPage).forEach((page) => {
-            const existing = this.filteredItems.find((p) => p.page === Number(page));
-            const sortedItems = groupedByPage[page].sort(
-              (a, b) => a.line - b.line || a.word_number - b.word_number
-            );
-
-            if (existing) {
-              const existingIds = new Set(existing.items.map((i) => i.id));
-              const newItems = sortedItems.filter((item) => !existingIds.has(item.id));
-              existing.items.push(...newItems);
-            } else {
-              this.filteredItems.push({
-                page: Number(page),
-                items: sortedItems,
-              });
-            }
-          });
-
-          fontSet.forEach((fontStr) => {
-            const [fontName, fontPage] = fontStr.split('|');
-            this.loadFont(fontName, fontPage);
-          });
-
-          this.nextVersesUrl = surah.verses.next;
-        })
-        .catch((err) => {
-          console.error('Axios error:', err);
-        });
-    },
-    loadFont(fontName, fontPath) {
-      if (document.getElementById(`font-style-${fontName}`)) return;
-
-      const style = document.createElement('style');
-      style.id = `font-style-${fontName}`;
-      style.innerHTML = `
-        @font-face {
-          font-family: '${fontName}';
-          src: url('${fontPath}');
-        }
-        .font-${fontName} {
-          font-family: '${fontName}';
-        }
-      `;
-      document.head.appendChild(style);
-    },
-    playSound() {
-      // در صورت نیاز فعال شود
-    },
-    playAudioWord(y, surah) {
-      const audio = this.$refs.wordAudio;
-
-      const url = `http://localhost:8000/quran/audio/combined/?surah_id=${surah}&ayah_id=${y.verse_number}&word_id=${y.word_number}`;
-
-      axios
-        .get(url)
-        .then((response) => {
-          const audioUrl = response.data.audio_url;
-          // console.log(response.data)
-          if (this.audioSrc === audioUrl) {
-            audio.currentTime = 0;
-            audio
-              .play()
-              .catch((err) => console.error('خطا در پخش مجدد:', err));
-            return;
-          }
-
-          this.audioSrc = audioUrl;
-
-          this.$nextTick(() => {
-            audio.load();
-            audio.play().catch((err) => console.error('خطا در پخش صوت:', err));
-          });
-        })
-        .catch((error) => {
-          console.error('خطا در دریافت صوت:', error);
-        })
-        .finally(() => {
-          console.log('درخواست صوت به پایان رسید.');
-        });
-    },
-    toggleWordTooltip(id) {
-      this.activeTooltipId = this.activeTooltipId === id ? null : id;
-    },
-    closeTooltip() {
-      this.activeTooltipId = null;
-    },
-    copyWord(text) {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(() => {
-          alert('کلمه کپی شد');
-        });
-      } else {
-        alert('کپی متن پشتیبانی نمی‌شود');
-      }
-    },
-    toggleTooltip(id) {
-      if (this.activeTooltipId === id) {
-        this.activeTooltipId = null;
-      } else {
-        this.activeTooltipId = id;
-      }
-    },
-
-  },
+const contentStyle = {
+  backgroundColor: 'var(--bg-dark)',
+  color: 'white',
+  border: 'none',
+  maxWidth: '690px',
+  margin: '0 auto',
+  textAlign: 'justify',
+  textJustify: 'inter-word',
 };
+
+const wordAudio = ref(null);
+
+// تابع ریست
+const resetSurah = () => {
+  filteredItems.value = [];
+  surahTitleItems.value = [];
+  secondLineItems.value = [];
+  nextVersesUrl.value = null;
+  activeTooltipId.value = null;
+  audioSrc.value = null;
+};
+
+// اسکرول بی‌نهایت
+const handleScroll = () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+    if (nextVersesUrl.value && !loadingNext.value) {
+      loadingNext.value = true;
+      loadSurah(nextVersesUrl.value).finally(() => {
+        loadingNext.value = false;
+      });
+    }
+  }
+};
+
+// سوره بعدی
+const goToNextSurah = () => {
+  if (surahno.value < maxSurah.value) {
+    surahno.value++;
+    resetSurah();
+    loadSurah();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+// سوره قبلی
+const goToPrevSurah = () => {
+  if (surahno.value > 1) {
+    surahno.value--;
+    resetSurah();
+    loadSurah();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+// لود سوره
+const loadSurah = (url = null) => {
+  const apiUrl =
+    url ||
+    `http://localhost:8000/api/v1/quran/surahs/?id=${surahno.value}&name=&english_name=&juz=&page_number=`;
+
+  return axios
+    .get(apiUrl)
+    .then((response) => {
+      if (!response.data.results.length) return;
+      const surah = response.data.results[0];
+
+      // عنوان و بسم‌الله فقط یکبار
+      if (!surahTitleItems.value.length) {
+        surahTitleItems.value = [surah];
+      }
+      if (!secondLineItems.value.length && surah.bismillah) {
+        secondLineItems.value = surah.bismillah;
+      }
+
+      const verses = surah.verses?.results || [];
+      const allWords = [];
+
+      verses.forEach((verse) => {
+        if (verse.words && Array.isArray(verse.words)) {
+          verse.words.forEach((word) => {
+            allWords.push(word);
+          });
+        }
+      });
+
+      // گروه‌بندی بر اساس صفحه
+      const groupedByPage = {};
+      const fontSet = new Set();
+
+      allWords.forEach((word) => {
+        const page = word.page || 0;
+        if (!groupedByPage[page]) {
+          groupedByPage[page] = [];
+        }
+        groupedByPage[page].push(word);
+
+        if (word.fontName && word.fontPage) {
+          fontSet.add(`${word.fontName}|${word.fontPage}`);
+        }
+      });
+
+      Object.keys(groupedByPage).forEach((page) => {
+        const existing = filteredItems.value.find(
+          (p) => p.page === Number(page)
+        );
+        const sortedItems = groupedByPage[page].sort(
+          (a, b) => a.line - b.line || a.word_number - b.word_number
+        );
+
+        if (existing) {
+          const existingIds = new Set(existing.items.map((i) => i.id));
+          const newItems = sortedItems.filter(
+            (item) => !existingIds.has(item.id)
+          );
+          existing.items.push(...newItems);
+        } else {
+          filteredItems.value.push({
+            page: Number(page),
+            items: sortedItems,
+          });
+        }
+      });
+
+      // بارگذاری فونت
+      fontSet.forEach((fontStr) => {
+        const [fontName, fontPage] = fontStr.split('|');
+        loadFont(fontName, fontPage);
+      });
+
+      // صفحه بعدی
+      nextVersesUrl.value = surah.verses?.next || null;
+    })
+    .catch((err) => {
+      console.error('Axios error:', err);
+    });
+};
+
+// لود فونت
+const loadFont = (fontName, fontPath) => {
+  if (document.getElementById(`font-style-${fontName}`)) return;
+
+  const style = document.createElement('style');
+  style.id = `font-style-${fontName}`;
+  style.innerHTML = `
+    @font-face {
+      font-family: '${fontName}';
+      src: url('${fontPath}');
+    }
+    .font-${fontName} {
+      font-family: '${fontName}';
+    }
+  `;
+  document.head.appendChild(style);
+};
+
+// پخش صوت کلمه
+const playAudioWord = (y, surah = surahno.value) => {
+  const audio = wordAudio.value;
+  const url = `http://localhost:8000/api/v1/quran/audio/collection/?surah_id=${surah}&ayah_id=${y.verse_number}&word_id=${y.word_number}`;
+
+  axios
+    .get(url)
+    .then((response) => {
+      const audioUrl = response.data.audio_url;
+      if (!audioUrl) return;
+
+      if (audioSrc.value === audioUrl) {
+        audio.currentTime = 0;
+        audio.play().catch((err) => console.error('خطا در پخش مجدد:', err));
+        return;
+      }
+
+      audioSrc.value = audioUrl;
+      nextTick(() => {
+        audio.load();
+        audio.play().catch((err) => console.error('خطا در پخش صوت:', err));
+      });
+    })
+    .catch((error) => {
+      console.error('خطا در دریافت صوت:', error);
+    });
+};
+
+// تولتیپ
+const toggleTooltip = (id) => {
+  activeTooltipId.value = activeTooltipId.value === id ? null : id;
+};
+
+const closeTooltip = () => {
+  activeTooltipId.value = null;
+};
+
+const copyWord = (text) => {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('کلمه کپی شد');
+    });
+  } else {
+    alert('کپی متن پشتیبانی نمی‌شود');
+  }
+};
+
+// واکنش به تغییر id_sure
+watch(
+  () => props.id_sure,
+  (newVal) => {
+    surahno.value = newVal;
+    resetSurah();
+    loadSurah();
+  },
+  { immediate: true }
+);
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
 </script>
+
 
 <style scoped>
 @font-face {

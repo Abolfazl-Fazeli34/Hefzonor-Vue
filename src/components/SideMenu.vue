@@ -25,8 +25,10 @@
         />
       </div>
     </div>
-    <div class="offcanvas-body px-2">
-      <ul class="list-group list-group-flush" style="margin-top: 123px;">
+
+    <!-- کادر اسکرول‌شونده با ارتفاع قابل کنترل -->
+    <div class="offcanvas-body px-2 custom-scrollbar" style="overflow-y: auto; max-height: calc(100vh - 130px);margin-top: 100px;">
+      <ul class="list-group list-group-flush mt-3">
         <li
           v-for="x in list_bar"
           :key="x.id"
@@ -42,7 +44,7 @@
             </div>
           </template>
 
-          <!-- اگر داده جزء (juz) است -->
+          <!-- اگر داده جزء است -->
           <template v-else-if="x.juz">
             <div @click="goToJoz(x.juz)" class="d-flex align-items-center w-100">
               <div style="margin-left: 25px;">{{ x.id }}</div>
@@ -99,7 +101,7 @@ export default {
       this.$emit('close')
     },
     loadSures() {
-      axios.get('http://localhost:8000/sures/')
+      axios.get('http://localhost:8000/api/v1/quran/surahs/')
         .then((response) => {
           this.list_bar = response.data.sures || []
         })
@@ -108,7 +110,7 @@ export default {
         })
     },
     listSure(){
-      axios.get('http://localhost:8000/quran/list/combined/?type=surah')
+      axios.get('http://localhost:8000/api/v1/quran/surah/verse/list/?type=surah')
         .then((response) => {
           this.list_bar = response.data.sures;
           // console.log(response.data);
@@ -117,19 +119,19 @@ export default {
     },
     goPage(type) {
       if (type == 'juz'){
-        axios.get('http://localhost:8000/quran/list/combined/?type=juz')
+        axios.get('http://localhost:8000/api/v1/quran/surah/verse/list/?type=juz')
         .then((response) => {
           this.list_bar = response.data;
           // console.log(response.data.jozs[1].joz);
         })
         .catch((error) => {console.log({'error': error})});
       }else if (type == 'page'){
-        axios.get('http://localhost:8000/quran/list/combined/?type=page')
+        axios.get('http://localhost:8000/api/v1/quran/surah/verse/list/?type=page')
         .then((response) => {
           this.list_bar = response.data;
         }).catch((error) => console.log({'error': error}));
       }else if (type == 'sure'){
-        axios.get('http://localhost:8000/quran/list/combined/?type=surah')
+        axios.get('http://localhost:8000/api/v1/quran/surah/verse/list/?type=surah')
         .then((response) => {
           this.list_bar = response.data;
           // console.log(response.data);
@@ -175,18 +177,21 @@ export default {
   },
 }
 </script>
-
 <style scoped>
 .custom-offcanvas {
   position: fixed;
   right: -250px;
   width: 250px;
+  height: 100vh;
   background-color: var(--bg-dark);
   color: white;
   z-index: 1000;
   transition: all 0.25s ease-in-out;
   overflow-y: auto;
+  overflow-x: hidden;
   border-right: 1px solid var(--border-color);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 .custom-offcanvas.show {
@@ -242,5 +247,14 @@ input::placeholder {
 .btn-close:focus {
   outline: none;
   box-shadow: none;
+}
+
+/* اسکرول سفارشی */
+.custom-offcanvas::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-offcanvas::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 </style>

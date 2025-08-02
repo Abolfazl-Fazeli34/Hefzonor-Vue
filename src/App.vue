@@ -10,12 +10,14 @@
     <!-- Side Menu -->
     <SideMenu :isOpen="isMenuOpen" @close="closeMenu" @selectSurah="handleSurahSelected" :selectedWord="selectedWord"/>
 
-    <!-- Main Content -->
-    <TabbedContent  :id_sure="id_sure" @send-audio-data="handleAudioData" :filtered-items="filteredItems" @wordClicked="handleWordClick"/>
+    
+    <!-- Main Content via router -->
+    <router-view :id_sure="id_sure" :filtered-items="filteredItems" :selectedWord="selectedWord" @send-audio-data="handleAudioData" @wordClicked="handleWordClick" />
+
 
     <!-- Audio Player -->
     <AudioPlayer :data="audioDataFromChild" :selectedWord="selectedWord"/>
-    <router-view />
+
   </div>
 </template>
 
@@ -25,6 +27,8 @@ import InfoBar from './components/InfoBar.vue'
 import SideMenu from './components/SideMenu.vue'
 import AudioPlayer from './components/AudioPlayer.vue'
 import TabbedContent from './components/TabbedContent.vue'
+import QuranDetails from './components/QuranDetails.vue'
+
 
 
 export default {
@@ -34,7 +38,8 @@ export default {
     InfoBar,
     SideMenu,
     AudioPlayer,
-    TabbedContent
+    TabbedContent,
+    QuranDetails,
   },
   data() {
     return {
