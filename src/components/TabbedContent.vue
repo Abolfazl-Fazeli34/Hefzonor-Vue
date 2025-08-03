@@ -28,18 +28,17 @@
 
           <!-- بسم‌الله -->
           <div class="d-flex justify-content-center flex-wrap gap-1 mt-3">
-            <div v-for="x in secondLineItems" :key="x.id">
-              <span v-for="word in x.bismillah" :key="word.id" style="font-size: 2.4rem;"
-                    :class="word.type === 3 ? 'basmala word-hover QCF_BSML' : 'normal-word word-hover QCF_BSML'">
-                {{ word.code }}
-              </span>
-            </div>
+            <span v-for="word in secondLineItems" :key="word.id" style="font-size: 2.4rem;"
+                  :class="word.type === 3 ? 'basmala word-hover QCF_BSML' : 'normal-word word-hover QCF_BSML'">
+              {{ word.code }}
+            </span>
           </div>
+
 
           <!-- بخش صوت صفحه با آیکون و متن کنار هم -->
           <div class="d-flex justify-content-between align-items-center mt-3" style="max-width: 80%; margin: 0 auto;">
             <button type="button" class="button btn p-0 text-white d-flex align-items-center gap-2"
-                    style="margin-top: 4px;" @click="playSound()">
+                    style="margin-top: 4px;">
               <i class="bi bi-play-fill fs-5"></i>
               <span>بخش صوت</span>
             </button>
