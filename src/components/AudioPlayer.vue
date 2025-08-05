@@ -178,7 +178,7 @@ export default {
   bottom: 0;
   right: 0;
   left: 0;
-  height: 70px;
+  height: 60px;
   background-color: var(--bg-dark);
   border-top: 1px solid var(--border-color);
   display: flex;
@@ -224,8 +224,8 @@ export default {
 }
 
 .play-button {
-  width: 45px;
-  height: 45px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background-color: var(--text-accent);
   color: var(--bg-darker);

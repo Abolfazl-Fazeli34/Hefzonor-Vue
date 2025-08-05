@@ -12,7 +12,17 @@
 
     
     <!-- Main Content via router -->
-    <router-view :id_sure="id_sure" :filtered-items="filteredItems" :selectedWord="selectedWord" @send-audio-data="handleAudioData" @wordClicked="handleWordClick" />
+    <!-- <router-view :id_sure="id_sure" :filtered-items="filteredItems" :selectedWord="selectedWord" @send-audio-data="handleAudioData" @wordClicked="handleWordClick" /> -->
+    <router-view v-slot="{ Component }">
+      <component
+        :is="Component"
+        :id_sure="id_sure"
+        :filtered-items="filteredItems"
+        :selected-word="selectedWord"
+        @send-audio-data="handleAudioData"
+        @wordClicked="handleWordClick"
+      />
+    </router-view>
 
 
     <!-- Audio Player -->

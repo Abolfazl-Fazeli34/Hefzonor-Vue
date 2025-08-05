@@ -88,10 +88,15 @@
         <div class="mb-3 border rounded p-3 shadow-sm verse-box">
 
 
+        <!-- آیه
+        <div class="text-center verse-text mb-3">
+          ﴿﴾
+        </div> -->
         <!-- آیه -->
         <div class="text-center verse-text mb-3">
-          ﴿وَإِنَّكَ لَعَلَىٰ خُلُقٍ عَظِيمٍ﴾
+          ﴿ {{ verseText || 'لطفاً یک آیه انتخاب کنید' }} ﴾
         </div>
+
 
         <!-- معنی -->
         <div class="text-center verse-meaning mb-4">
@@ -103,7 +108,7 @@
 
           <!-- تب‌ها (مترجمان) -->
           <ul class="nav nav-tabs mb-3">
-            <li v-for="(translator, index) in translators" :key="translator.id" class="nav-item">
+            <li v-for="(translator, index) in translations" :key="translator.id" class="nav-item">
               <button
                 class="nav-link"
                 :class="{ active: activeTab === index }"
@@ -115,22 +120,25 @@
           </ul>
 
           <!-- نمایش ترجمه انتخاب شده -->
-          <div class="translation-content">
+          <div class="translation-content" v-if="translations.length > 0">
             <ul class="list-unstyled">
-              <li v-for="(line, idx) in translators[activeTab].translations" :key="idx">
+              <li v-for="(line, idx) in translations[activeTab]?.translations" :key="idx">
                 {{ line }}
               </li>
             </ul>
           </div>
+          <div v-else>
+            <p class="text-muted">ترجمه‌ای برای این آیه یافت نشد</p>
+          </div>
         </div>
-
-        <div class="translation-box border-green" dir="ltr">
+        
+        <div class="translation-box border-green" dir="ltr" v-if="translationsEn.length > 0">
           <h5 class="section-title text-green">English Translations</h5>
 
           <!-- تب‌ها (مترجمان) -->
-          <ul class="nav nav-tabs mb-3">
+          <ul class="nav nav-tabs mb-3" style="padding-left: 0px;">
             <li
-              v-for="(translator, index) in translatorsEn"
+              v-for="(translator, index) in translationsEn"
               :key="translator.id"
               class="nav-item"
             >
@@ -146,21 +154,21 @@
 
           <!-- نمایش ترجمه انتخاب شده -->
           <div class="translation-content">
-            <ul class="list-unstyled">
-              <li v-for="(line, idx) in translatorsEn[activeTabEn].translations" :key="idx">
+            <ul class="list-unstyled" style="padding-left: 0px;">
+              <li v-for="(line, idx) in translationsEn[activeTabEn].translations" :key="idx">
                 {{ line }}
               </li>
             </ul>
           </div>
         </div>
 
-        <div class="translation-box border-red" dir="rtl">
+        <div class="translation-box border-red" dir="rtl" v-if="translationsTable.length > 0">
           <h5 class="section-title text-red">معانی کلمات آیه</h5>
 
           <!-- تب‌ها (مترجمان) -->
           <ul class="nav nav-tabs mb-3">
             <li
-              v-for="(translator, index) in translatorsTable"
+              v-for="(translator, index) in translationsTable"
               :key="translator.id"
               class="nav-item"
             >
@@ -183,7 +191,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(item, idx) in translatorsTable[activeTabTable].words" :key="idx">
+              <tr v-for="(item, idx) in translationsTable[activeTabTable].words" :key="idx">
                 <td>{{ item.word }}</td>
                 <td>{{ item.meaning }}</td>
               </tr>
@@ -191,14 +199,14 @@
           </table>
         </div>
 
-        <div class="translation-box border-purple" dir="rtl">
+        <div class="translation-box border-purple" dir="rtl" v-if="tafseerTranslations.length > 0" style="max-width: 1120px;">
           <h5 class="section-title text-purple">تفسیر آیه</h5>
 
           <!-- تب‌ها -->
           <ul class="nav nav-tabs mb-3">
             <li
-              v-for="(interpretation, index) in interpretations"
-              :key="interpretation.id"
+              v-for="(tafseer, index) in tafseerTranslations"
+              :key="tafseer.id"
               class="nav-item"
             >
               <button
@@ -206,16 +214,17 @@
                 :class="{ active: activeInterpretationTab === index }"
                 @click="activeInterpretationTab = index"
               >
-                {{ interpretation.name }}
+                {{ tafseer.name }}
               </button>
             </li>
           </ul>
 
           <!-- متن تفسیر انتخاب شده -->
           <p class="text-light" style="min-height: 100px;">
-            {{ interpretations[activeInterpretationTab].text }}
+            {{ tafseerTranslations[activeInterpretationTab]?.text || 'تفسیر یافت نشد' }}
           </p>
         </div>
+
 
         </div>
       </div>
@@ -224,38 +233,81 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, defineProps, defineEmits } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 
 const route = useRoute()
 
+const props = defineProps({
+  surahno: { type: Number, default: null },
+  verse_number: { type: Number, default: null },
+  id_sure: { type: Number, default: null },
+  filteredItems: { type: Array, default: () => [] },
+  selectedWord: { type: String, default: '' }
+})
+
+const emit = defineEmits(['sendAudioData', 'wordClicked'])
+
+function onWordClick(word) {
+  emit('wordClicked', word)
+}
+
+// داده‌ها
 const surahs = ref([])
 const ayahs = ref([])
-const selectedSurah = ref('')
-const selectedAyah = ref('')
+const selectedSurah = ref(null)
+const selectedAyah = ref(null)
+const verseText = ref('')
 
-// دریافت پارامترها از route (اگر موجود بود)
-const surahno = route.params.surahno
-const verse_number = route.params.verse_number
+// ترجمه‌ها (فارسی)
+const translators = ref([])
+const translations = ref([])
+const activeTab = ref(0)
+const isFetchingTranslations = ref(false)
 
-// 1️⃣ دریافت لیست سوره‌ها از API
+// ترجمه‌ها (انگلیسی)
+const translatorsEn = ref([])
+const translationsEn = ref([])
+const activeTabEn = ref(0)
+const isFetchingTranslationsEn = ref(false)
+
+// معانی کلمات
+const translatorsTable = ref([])
+const translationsTable = ref([])
+const activeTabTable = ref(0)
+const isFetchingWordMeanings = ref(false)
+
+// تفاسیر
+const tafseerTranslators = ref([])
+const tafseerTranslations = ref([])
+const activeInterpretationTab = ref(0)
+
+// گرفتن پارامترها
+const surahno = route.params.surahno || props.surahno
+const verse_number = route.params.verse_number || props.verse_number
+
+// ✅ دریافت لیست سوره‌ها
 onMounted(async () => {
   try {
-    const response = await axios.get('http://localhost:8000/api/v1/quran/surah/verse/list/?type=surah')
-    surahs.value = response.data
+    const { data } = await axios.get('http://localhost:8000/api/v1/quran/surah/verse/list/?type=surah')
+    surahs.value = data
 
-    // اگر پارامتر از route اومده باشه، انتخاب اولیه انجام بشه
     if (surahno) {
       selectedSurah.value = parseInt(surahno)
       generateAyahs()
     }
+
+    await fetchTranslatorsFa()
+    await fetchTranslatorsEn()
+    await fetchTranslatorsTable()
+    await fetchTafseerTranslators()
   } catch (error) {
-    console.error("خطا در دریافت سوره‌ها:", error)
+    console.error("❌ خطا در دریافت سوره‌ها:", error)
   }
 })
 
-// 2️⃣ ساخت دیکشنری آیات بر اساس verse_count
+// ✅ ساخت لیست آیات
 function generateAyahs() {
   const surah = surahs.value.find(s => s.id === parseInt(selectedSurah.value))
   if (surah) {
@@ -265,129 +317,240 @@ function generateAyahs() {
     }))
     if (verse_number) {
       selectedAyah.value = parseInt(verse_number)
+      fetchVerseText()
     }
+  } else {
+    ayahs.value = []
   }
 }
 
+// ✅ دریافت متن آیه
+async function fetchVerseText() {
+  if (!selectedSurah.value || !selectedAyah.value) return
+  try {
+    const { data } = await axios.get(
+      `http://localhost:8000/api/v1/quran/surahs/?id=${selectedSurah.value}&verse_number=${selectedAyah.value}`
+    )
 
-const activeTab = ref(0);
+    const results = data.results?.[0]?.verses?.results || []
+    const firstVerse = results[0]?.verses?.[0]?.text?.full_tashkeel || ''
+    verseText.value = firstVerse
 
-// داده‌ها (می‌تونه از API بیاد)
-const translators = ref([
-  {
-    id: 1,
-    name: 'مترجم اول',
-    translations: [
-      'و تو واقعاً دارای اخلاقی بزرگ هستی.',
-      'ترجمه دوم: تو بر خُلقی عظیم هستی.'
-    ]
-  },
-  {
-    id: 2,
-    name: 'مترجم دوم',
-    translations: [
-      'و تو به‌راستی دارای سیرتی بزرگ هستی.',
-      'ترجمه جایگزین: تو دارای اخلاقی والا هستی.'
-    ]
-  },
-  {
-    id: 3,
-    name: 'مترجم سوم',
-    translations: [
-      'تو بر خُلقی ستودنی قرار داری.',
-      'ترجمه دیگر: و تو بر اخلاقی نیکو هستی.'
-    ]
+    if (translators.value.length > 0) await fetchTranslationsFa()
+    if (translatorsEn.value.length > 0) await fetchTranslationsEn()
+    if (translatorsTable.value.length > 0) await fetchTranslationsTable()
+    if (tafseerTranslators.value.length > 0) await fetchTafseerTranslations()
+  } catch (error) {
+    console.error("❌ خطا در دریافت آیه:", error)
   }
-]);
+}
 
-const activeTabEn = ref(0);
-
-// داده‌ها (می‌تونه از API بیاد)
-const translatorsEn = ref([
-  {
-    id: 1,
-    name: 'Translator 1',
-    translations: [
-      'And indeed, you are of a great moral character.',
-      'Indeed, you possess an excellent character.'
-    ]
-  },
-  {
-    id: 2,
-    name: 'Translator 2',
-    translations: [
-      'Verily, you have a noble and exalted character.',
-      'Truly, you are blessed with excellent manners.'
-    ]
-  },
-  {
-    id: 3,
-    name: 'Translator 3',
-    translations: [
-      'Indeed, you are on an honorable standard of morals.',
-      'You are truly endowed with magnificent character.'
-    ]
+// ✅ مترجمان فارسی
+async function fetchTranslatorsFa() {
+  try {
+    const { data } = await axios.get(
+      'http://localhost:8000/api/v1/quran/translator/?language=fa&translation_type=verse'
+    )
+    translators.value = data
+  } catch (error) {
+    console.error("❌ خطا در دریافت مترجمان فارسی:", error)
   }
-]);
+}
 
-const activeTabTable = ref(0);
-
-// داده‌ها (می‌تونه از API بیاد)
-const translatorsTable = ref([
-  {
-    id: 1,
-    name: 'مترجم اول',
-    words: [
-      { word: 'وَإِنَّكَ', meaning: 'و تو قطعاً' },
-      { word: 'لَعَلَىٰ', meaning: 'بر روی' },
-      { word: 'خُلُقٍ', meaning: 'اخلاق' },
-      { word: 'عَظِيمٍ', meaning: 'بزرگ' }
-    ]
-  },
-  {
-    id: 2,
-    name: 'مترجم دوم',
-    words: [
-      { word: 'وَإِنَّكَ', meaning: 'و تو به‌راستی' },
-      { word: 'لَعَلَىٰ', meaning: 'در جایگاه' },
-      { word: 'خُلُقٍ', meaning: 'رفتار' },
-      { word: 'عَظِيمٍ', meaning: 'بزرگوار' }
-    ]
-  },
-  {
-    id: 3,
-    name: 'مترجم سوم',
-    words: [
-      { word: 'وَإِنَّكَ', meaning: 'و براستی تو' },
-      { word: 'لَعَلَىٰ', meaning: 'بر بلندای' },
-      { word: 'خُلُقٍ', meaning: 'منش' },
-      { word: 'عَظِيمٍ', meaning: 'ارجمند' }
-    ]
+// ✅ مترجمان انگلیسی
+async function fetchTranslatorsEn() {
+  try {
+    const { data } = await axios.get(
+      'http://localhost:8000/api/v1/quran/translator/?language=en&translation_type=verse'
+    )
+    translatorsEn.value = data
+  } catch (error) {
+    console.error("❌ خطا در دریافت مترجمان انگلیسی:", error)
   }
-]);
+}
 
-const activeInterpretationTab = ref(0);
-
-const interpretations = ref([
-  {
-    id: 1,
-    name: 'تفسیر اول',
-    text: 'این آیه به اخلاق و شخصیت والای پیامبر اکرم (ص) اشاره دارد و نشان‌دهنده اهمیت اخلاق در اسلام است...'
-  },
-  {
-    id: 2,
-    name: 'تفسیر دوم',
-    text: 'تفسیر دوم توضیح می‌دهد که چگونه این آیه مسیر هدایت اخلاقی را برای مسلمانان مشخص می‌کند...'
-  },
-  {
-    id: 3,
-    name: 'تفسیر سوم',
-    text: 'در این تفسیر به جوانب مختلف رفتار و منش پیامبر و تاثیر آن بر امت پرداخته شده است...'
+// ✅ مترجمان معنی کلمات
+async function fetchTranslatorsTable() {
+  try {
+    const { data } = await axios.get(
+      'http://localhost:8000/api/v1/quran/translator/?language=fa&translation_type=word'
+    )
+    translatorsTable.value = data
+  } catch (error) {
+    console.error("❌ خطا در دریافت مترجمان معانی کلمات:", error)
   }
-]);
+}
 
+// ✅ ترجمه‌های فارسی
+async function fetchTranslationsFa() {
+  if (!selectedSurah.value || !selectedAyah.value || translators.value.length === 0) return
+  if (isFetchingTranslations.value) return
+  isFetchingTranslations.value = true
 
+  translations.value = []
+
+  for (let translator of translators.value) {
+    try {
+      const { data } = await axios.get(
+        `http://localhost:8000/api/v1/quran/verse/translation/?surah=${selectedSurah.value}&verse=${selectedAyah.value}&translator=${translator.id}`
+      )
+      const lines = data.results?.map(item => item.text) || []
+
+      translations.value.push({
+        id: translator.id,
+        name: translator.name,
+        translations: lines.length > 0 ? lines : ['ترجمه‌ای یافت نشد']
+      })
+    } catch (error) {
+      console.error(`❌ خطا در ترجمه فارسی ${translator.name}:`, error)
+    }
+  }
+
+  if (translations.value.length > 0) activeTab.value = 0
+  isFetchingTranslations.value = false
+}
+
+// ✅ ترجمه‌های انگلیسی
+async function fetchTranslationsEn() {
+  if (!selectedSurah.value || !selectedAyah.value || translatorsEn.value.length === 0) return
+  if (isFetchingTranslationsEn.value) return
+  isFetchingTranslationsEn.value = true
+
+  translationsEn.value = []
+
+  for (let translator of translatorsEn.value) {
+    try {
+      const { data } = await axios.get(
+        `http://localhost:8000/api/v1/quran/verse/translation/?surah=${selectedSurah.value}&verse=${selectedAyah.value}&translator=${translator.id}`
+      )
+      const lines = data.results?.map(item => item.text) || []
+
+      translationsEn.value.push({
+        id: translator.id,
+        name: translator.name,
+        translations: lines.length > 0 ? lines : ['Translation not found']
+      })
+    } catch (error) {
+      console.error(`Error fetching English translation (${translator.name}):`, error)
+    }
+  }
+
+  if (translationsEn.value.length > 0) activeTabEn.value = 0
+  isFetchingTranslationsEn.value = false
+}
+
+// ✅ ترجمه‌های معانی کلمات
+async function fetchTranslationsTable() {
+  if (!selectedSurah.value || !selectedAyah.value || translatorsTable.value.length === 0) return
+  if (isFetchingWordMeanings.value) return
+  isFetchingWordMeanings.value = true
+
+  translationsTable.value = []
+
+  for (let translator of translatorsTable.value) {
+    try {
+      const { data } = await axios.get(
+        `http://localhost:8000/api/v1/quran/word/meaning/?surah=${selectedSurah.value}&verse=${selectedAyah.value}&translator=${translator.id}&root_id=`
+      )
+
+      let wordsList = []
+
+      if (data.results && data.results.length > 0) {
+        const validResult = data.results.find(item => item.meanings && item.meanings.trim() !== '')
+        if (validResult) {
+          let meaningsStr = validResult.meanings
+            .replace(/}{/g, '،')
+            .replace(/\s+/g, ' ')
+            .trim()
+
+          let seen = new Set()
+          meaningsStr.split(/،|,/).forEach(part => {
+            const cleaned = part.trim()
+            const eqIndex = cleaned.indexOf('=')
+            if (eqIndex !== -1) {
+              const word = cleaned.slice(0, eqIndex).trim().replace(/^[^آ-یa-zA-Z0-9]+|[^آ-یa-zA-Z0-9]+$/g, '')
+              const meaning = cleaned.slice(eqIndex + 1).trim()
+              if (word && meaning) {
+                const entry = word + '=' + meaning
+                if (!seen.has(entry)) {
+                  seen.add(entry)
+                  wordsList.push({ word, meaning })
+                }
+              }
+            }
+          })
+        }
+      }
+
+      translationsTable.value.push({
+        id: translator.id,
+        name: translator.name,
+        words: wordsList.length > 0 ? wordsList : [{ word: '-', meaning: 'معنی یافت نشد' }]
+      })
+    } catch (error) {
+      console.error(`❌ خطا در معنی کلمات (${translator.name}):`, error)
+    }
+  }
+
+  if (translationsTable.value.length > 0) activeTabTable.value = 0
+  isFetchingWordMeanings.value = false
+}
+
+// ✅ لیست مفسران
+async function fetchTafseerTranslators() {
+  try {
+    const { data } = await axios.get(
+      'http://localhost:8000/api/v1/quran/translator/?language=fa&translation_type=tafseer'
+    )
+    tafseerTranslators.value = data
+  } catch (error) {
+    console.error("❌ خطا در دریافت لیست مفسران:", error)
+  }
+}
+
+// ✅ ترجمه‌های تفسیر
+async function fetchTafseerTranslations() {
+  if (!selectedSurah.value || !selectedAyah.value || tafseerTranslators.value.length === 0) return
+
+  tafseerTranslations.value = []
+
+  for (let translator of tafseerTranslators.value) {
+    try {
+      const { data } = await axios.get(
+        `http://localhost:8000/api/v1/quran/tafseer/?translator=${translator.id}&surah=${selectedSurah.value}&from_aya=${selectedAyah.value}&to_aya=${selectedAyah.value}`
+      )
+
+      const tafseerText = data.results?.[0]?.text || 'تفسیر یافت نشد'
+
+      tafseerTranslations.value.push({
+        id: translator.id,
+        name: translator.name,
+        text: tafseerText
+      })
+    } catch (error) {
+      console.error(`❌ خطا در دریافت تفسیر ${translator.name}:`, error)
+    }
+  }
+
+  if (tafseerTranslations.value.length > 0) activeInterpretationTab.value = 0
+}
+
+// ✅ واکنش به تغییرات
+watch(selectedSurah, () => {
+  if (!selectedSurah.value) return
+  generateAyahs()
+  verseText.value = ''
+  translations.value = []
+  translationsEn.value = []
+  translationsTable.value = []
+  tafseerTranslations.value = []
+})
+
+watch(selectedAyah, () => {
+  if (selectedAyah.value) fetchVerseText()
+})
 </script>
+
 
 <style scoped>
 :root {
