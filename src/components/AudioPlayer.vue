@@ -1,7 +1,5 @@
 <template>
   <div class="audio-player">
-    <!-- <audio controls :src="data"></audio> -->
-
     <!-- نوار پیشرفت -->
     <div class="progress-container" @click="seek">
       <div class="progress-bar" :style="{ width: progress + '%' }"></div>
@@ -17,14 +15,86 @@
         <button @click="toggleMenuTooltip" class="icon-button">
           <i class="fas fa-ellipsis-h"></i>
         </button>
-        <div class="menu-tooltip" v-if="showMenu">
-          <p class="text-light m-0 small">تنظیمات صوت</p>
-          <label class="form-check-label small text-muted">
-            <input type="checkbox" class="form-check-input me-1" /> تقویت باس
-          </label>
+
+        <!-- پنل تنظیمات -->
+        <div class="volume-tooltip volume-tooltip-width-for-panel-setting" v-if="showMenu">
+          <div class="translation-box border-green">
+            <h6 class="panel-title text-yellow-400 font-semibold mb-2">تنظیمات صوت</h6>
+
+            <!-- انتخاب قاری -->
+            <div class="form-group flex flex-col gap-1 w-full">
+              <label class="form-label">انتخاب قاری:</label>
+              <select v-model="settings.qari[0]" class="form-select flex-1">
+                <option v-for="(q, index) in settings.qari" :key="index">{{ q }}</option>
+              </select>
+            </div>
+            <hr>
+
+            <!-- محدوده پخش -->
+            <div class="flex flex-col gap-2">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" v-model="settings.rangeEnabled" class="accent-yellow-400" />
+                محدوده پخش
+              </label>
+              <div v-if="settings.rangeEnabled" class="flex flex-col gap-2">
+                <div class="display flex items-center gap-2">
+                  <label class="w-12">از:</label>
+                  <select v-model="settings.from[0]" class="form-select flex-1">
+                    <option v-for="(f, index) in settings.from" :key="index">{{ f }}</option>
+                  </select>
+                </div>
+                <div class="display flex items-center gap-2">
+                  <label class="w-12">تا:</label>
+                  <select v-model="settings.to[0]" class="form-select flex-1">
+                    <option v-for="(t, index) in settings.to" :key="index">{{ t }}</option>
+                  </select>
+                </div>
+
+                <!-- تکرار محدوده -->
+                <div class="display flex flex-col gap-1">
+                  <label style="width: 150px;">تکرار محدوده:</label>
+                  <input type="number" min="1" v-model="settings.repeatRange" class="form-input" />
+                </div>
+
+                <!-- تکرار آیه -->
+                <div class="display flex flex-col gap-1">
+                  <label style="width: 150px;">تکرار آیه:</label>
+                  <input type="number" min="1" v-model="settings.repeatAya" class="form-input" />
+                </div>
+              </div>
+            </div>
+            <hr>
+
+            <!-- سرعت پخش -->
+            <div class="form-group flex items-center gap-2 w-full">
+              <label class="w-28">سرعت پخش:</label>
+              <select v-model="settings.speed" class="form-select flex-1">
+                <option v-for="(s, index) in settings.speedOptions" :key="index" :value="s.value">
+                  {{ s.label }}
+                </option>
+              </select>
+            </div>
+            <hr>
+
+            <!-- وقفه بعد از قرائت -->
+            <div class="form-group flex items-center gap-2 w-full">
+              <label class="flex items-center gap-2 w-28">
+                <input type="checkbox" v-model="settings.pauseAfter" class="accent-yellow-400" />
+                وقفه بعد از قرائت
+              </label>
+              <input
+                v-if="settings.pauseAfter"
+                v-model="settings.pauseDuration"
+                type="number"
+                min="1"
+                class="form-input"
+                placeholder="ثانیه"
+              />
+            </div>
+          </div>
         </div>
       </div>
-
+      
       <!-- کنترل پخش -->
       <button @click="rewind" class="icon-button" title="۱۰ ثانیه عقب">
         <i class="fas fa-rotate-left"></i>
@@ -44,7 +114,9 @@
           <i class="fas fa-volume-up"></i>
         </button>
         <div class="volume-tooltip" v-if="showVolume">
+          <div class="translation-box border-green" style="padding: 3px 2px 2px 2px ; margin-bottom: 0;">
           <input type="range" min="0" max="1" step="0.01" v-model="volume" />
+          </div>
         </div>
       </div>
     </div>
@@ -54,121 +126,159 @@
 
     <!-- پلیر -->
     <audio
-        ref="audioRef"
-        :src="data"
-        @timeupdate="updateTime"
-        @loadedmetadata="setDuration"
+      ref="audioRef"
+      :src="data"
+      @timeupdate="updateTime"
+      @loadedmetadata="setDuration"
     ></audio>
   </div>
 </template>
+<script setup>
+import { ref, watch, onMounted, onBeforeUnmount } from "vue";
 
-<script>
-export default {
-  name: 'AudioPlayer',
-  props: {
-    data: String,
-    // selectedWord: Array,
-  },
-  data() {
-    return {
-      isPlaying: false,
-      currentTime: 0,
-      duration: 0,
-      progress: 0,
-      volume: 1,
-      showMenu: false,
-      showVolume: false,
-      audioSrc: ''  // مقدار اولیه خالی
-    };
-  },
-  mounted() {
-    document.addEventListener('click', this.onDocumentClick);
-    this.$refs.audioRef.volume = this.volume;
-  },
-  beforeUnmount() {
-    document.removeEventListener('click', this.onDocumentClick);
-  },
-  watch: {
-    data: {
-      immediate: true,
-      handler(newVal) {
-        if (newVal) {
-          this.audioSrc = newVal;
-          this.reloadAudio();
-        }
-      }
-    },
-    volume(val) {
-      if (this.$refs.audioRef) {
-        this.$refs.audioRef.volume = val;
-      }
+// --- Props ---
+const props = defineProps({
+  data: String,
+  // selectedWord: Array,
+});
+
+// --- Refs & State ---
+const audioRef = ref(null);
+const isPlaying = ref(false);
+const currentTime = ref(0);
+const duration = ref(0);
+const progress = ref(0);
+const volume = ref(1);
+const showMenu = ref(false);
+const showVolume = ref(false);
+const audioSrc = ref("");
+
+
+const settings = ref({
+  qari: ["مکارم (کبیری) (ترجمه صوتی)", "عبدالباسط", "منشاوی"],
+  rangeEnabled: false,
+  from: ["حمد (۱)", "فاتحه (۱)", "بقره (۱)"],
+  to: ["حمد (۱)", "فاتحه (۱)", "بقره (۱)"],
+  repeatRange: 2,
+  repeatAya: 1,
+  speed: 1,
+  speedOptions: [
+    { value: 0.5, label: "۰.۵x" },
+    { value: 1, label: "۱x" },
+    { value: 1.5, label: "۱.۵x" },
+    { value: 2, label: "۲x" },
+  ],
+  pauseAfter: false,
+  pauseDuration: 3,
+});
+
+// --- Watchers ---
+watch(
+  () => props.data,
+  (newVal) => {
+    if (newVal) {
+      audioSrc.value = newVal;
+      reloadAudio();
     }
   },
-  methods: {
-    reloadAudio() {
-      const audio = this.$refs.audioRef;
-      if (audio) {
-        audio.pause();
-        audio.load();
-        this.isPlaying = false;
-        this.currentTime = 0;
-        this.progress = 0;
-      }
-    },
-    updateTime() {
-      const audio = this.$refs.audioRef;
-      this.currentTime = audio.currentTime;
-      this.progress = this.duration ? (this.currentTime / this.duration) * 100 : 0;
-    },
-    setDuration() {
-      this.duration = this.$refs.audioRef.duration;
-    },
-    togglePlay() {
-      const audio = this.$refs.audioRef;
-      if (audio.paused) {
-        audio.play();
-        this.isPlaying = true;
-      } else {
-        audio.pause();
-        this.isPlaying = false;
-      }
-    },
-    rewind() {
-      const audio = this.$refs.audioRef;
-      audio.currentTime = Math.max(audio.currentTime - 10, 0);
-    },
-    forward() {
-      const audio = this.$refs.audioRef;
-      audio.currentTime = Math.min(audio.currentTime + 10, this.duration);
-    },
-    seek(event) {
-      const audio = this.$refs.audioRef;
-      const width = event.currentTarget.clientWidth;
-      const clickX = event.offsetX;
-      audio.currentTime = (clickX / width) * this.duration;
-    },
-    formatTime(time) {
-      const m = Math.floor(time / 60);
-      const s = Math.floor(time % 60);
-      return `${m}:${s < 10 ? '0' : ''}${s}`;
-    },
-    toggleMenuTooltip() {
-      this.showMenu = !this.showMenu;
-      this.showVolume = false;
-    },
-    toggleVolumeTooltip() {
-      this.showVolume = !this.showVolume;
-      this.showMenu = false;
-    },
-    onDocumentClick(e) {
-      if (!e.target.closest('.menu-group')) this.showMenu = false;
-      if (!e.target.closest('.volume-group')) this.showVolume = false;
-    },
-    handleWordClick(word) {
-      this.selectedWord = word;
+  { immediate: true }
+);
+
+watch(
+  () => volume.value,
+  (val) => {
+    if (audioRef.value) {
+      audioRef.value.volume = val;
     }
   }
+);
+
+// --- Methods ---
+const reloadAudio = () => {
+  const audio = audioRef.value;
+  if (audio) {
+    audio.pause();
+    audio.load();
+    isPlaying.value = false;
+    currentTime.value = 0;
+    progress.value = 0;
+  }
 };
+
+const updateTime = () => {
+  const audio = audioRef.value;
+  currentTime.value = audio.currentTime;
+  progress.value = duration.value
+    ? (currentTime.value / duration.value) * 100
+    : 0;
+};
+
+const setDuration = () => {
+  duration.value = audioRef.value.duration;
+};
+
+const togglePlay = () => {
+  const audio = audioRef.value;
+  if (audio.paused) {
+    audio.play();
+    isPlaying.value = true;
+  } else {
+    audio.pause();
+    isPlaying.value = false;
+  }
+};
+
+const rewind = () => {
+  const audio = audioRef.value;
+  audio.currentTime = Math.max(audio.currentTime - 10, 0);
+};
+
+const forward = () => {
+  const audio = audioRef.value;
+  audio.currentTime = Math.min(audio.currentTime + 10, duration.value);
+};
+
+const seek = (event) => {
+  const audio = audioRef.value;
+  const width = event.currentTarget.clientWidth;
+  const clickX = event.offsetX;
+  audio.currentTime = (clickX / width) * duration.value;
+};
+
+const formatTime = (time) => {
+  const m = Math.floor(time / 60);
+  const s = Math.floor(time % 60);
+  return `${m}:${s < 10 ? "0" : ""}${s}`;
+};
+
+const toggleMenuTooltip = () => {
+  showMenu.value = !showMenu.value;
+  showVolume.value = false;
+};
+
+const toggleVolumeTooltip = () => {
+  showVolume.value = !showVolume.value;
+  showMenu.value = false;
+};
+
+const onDocumentClick = (e) => {
+  if (!e.target.closest(".menu-group")) showMenu.value = false;
+  if (!e.target.closest(".volume-group")) showVolume.value = false;
+};
+
+const handleWordClick = (word) => {
+  console.log("Clicked word:", word);
+};
+
+// --- Lifecycle Hooks ---
+onMounted(() => {
+  document.addEventListener("click", onDocumentClick);
+  if (audioRef.value) audioRef.value.volume = volume.value;
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", onDocumentClick);
+});
 </script>
 
 
@@ -245,7 +355,7 @@ export default {
   border-radius: 6px;
   padding: 0.5rem;
   z-index: 10;
-  white-space: nowrap;
+
 }
 
 .volume-group,
@@ -280,5 +390,70 @@ export default {
   .time-label {
     font-size: 0.7rem;
   }
+}
+
+
+.settings-panel {
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem;
+  z-index: 10;
+}
+
+.form-select,
+.form-input {
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.form-select:focus,
+.form-input:focus {
+  outline: none;
+  /* border-color: var(--text-accent); */
+}
+
+.menu-tooltip,
+.volume-tooltip {
+  position: absolute;
+  bottom: 50px;
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem;
+  z-index: 10;
+  white-space: normal;
+}
+
+.volume-tooltip-width-for-panel-setting{
+  width: 350px;
+  transform: translateX(143px);
+}
+
+.display{
+      display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ترجمه‌ها */
+.translation-box {
+  background-color: rgba(255, 255, 255, 0.025);
+  border: 1px solid;
+  border-radius: 0.50rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+
+
+.border-green {
+  border-color: var(--green);
 }
 </style>

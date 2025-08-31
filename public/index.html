@@ -35,9 +35,17 @@
         color: var(--text-light);
         font-family: 'Scheherazade', 'Amiri', serif;
       }
+      /* اسکرول سفارشی */
+      .custom-offcanvas::-webkit-scrollbar {
+        width: 10px;
+      }
+      .custom-offcanvas::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+      }
     </style>
   </head>
-  <body>
+  <body class="custom-offcanvas">
     <div id="app"></div>
   </body>
 </html>

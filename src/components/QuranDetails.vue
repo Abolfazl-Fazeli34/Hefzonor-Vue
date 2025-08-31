@@ -100,7 +100,9 @@
 
         <!-- معنی -->
         <div class="text-center verse-meaning mb-4">
-          و تو قطعاً در اخلاق بزرگ هستی.
+          <li v-for="(line, idx) in translations[activeTab]?.translations" :key="idx">
+              {{ line }}
+          </li>
         </div>
 
         <div class="translation-box border-green">
@@ -303,7 +305,7 @@ onMounted(async () => {
     await fetchTranslatorsTable()
     await fetchTafseerTranslators()
   } catch (error) {
-    console.error("❌ خطا در دریافت سوره‌ها:", error)
+    console.error("خطا در دریافت سوره‌ها:", error)
   }
 })
 
@@ -341,7 +343,7 @@ async function fetchVerseText() {
     if (translatorsTable.value.length > 0) await fetchTranslationsTable()
     if (tafseerTranslators.value.length > 0) await fetchTafseerTranslations()
   } catch (error) {
-    console.error("❌ خطا در دریافت آیه:", error)
+    console.error(" خطا در دریافت آیه:", error)
   }
 }
 
@@ -353,7 +355,7 @@ async function fetchTranslatorsFa() {
     )
     translators.value = data
   } catch (error) {
-    console.error("❌ خطا در دریافت مترجمان فارسی:", error)
+    console.error(" خطا در دریافت مترجمان فارسی:", error)
   }
 }
 
@@ -365,7 +367,7 @@ async function fetchTranslatorsEn() {
     )
     translatorsEn.value = data
   } catch (error) {
-    console.error("❌ خطا در دریافت مترجمان انگلیسی:", error)
+    console.error(" خطا در دریافت مترجمان انگلیسی:", error)
   }
 }
 
@@ -377,7 +379,7 @@ async function fetchTranslatorsTable() {
     )
     translatorsTable.value = data
   } catch (error) {
-    console.error("❌ خطا در دریافت مترجمان معانی کلمات:", error)
+    console.error(" خطا در دریافت مترجمان معانی کلمات:", error)
   }
 }
 
@@ -402,7 +404,7 @@ async function fetchTranslationsFa() {
         translations: lines.length > 0 ? lines : ['ترجمه‌ای یافت نشد']
       })
     } catch (error) {
-      console.error(`❌ خطا در ترجمه فارسی ${translator.name}:`, error)
+      console.error(` خطا در ترجمه فارسی ${translator.name}:`, error)
     }
   }
 
@@ -488,7 +490,7 @@ async function fetchTranslationsTable() {
         words: wordsList.length > 0 ? wordsList : [{ word: '-', meaning: 'معنی یافت نشد' }]
       })
     } catch (error) {
-      console.error(`❌ خطا در معنی کلمات (${translator.name}):`, error)
+      console.error(` خطا در معنی کلمات (${translator.name}):`, error)
     }
   }
 
@@ -504,7 +506,7 @@ async function fetchTafseerTranslators() {
     )
     tafseerTranslators.value = data
   } catch (error) {
-    console.error("❌ خطا در دریافت لیست مفسران:", error)
+    console.error(" خطا در دریافت لیست مفسران:", error)
   }
 }
 
@@ -528,7 +530,7 @@ async function fetchTafseerTranslations() {
         text: tafseerText
       })
     } catch (error) {
-      console.error(`❌ خطا در دریافت تفسیر ${translator.name}:`, error)
+      console.error(` خطا در دریافت تفسیر ${translator.name}:`, error)
     }
   }
 
