@@ -4,6 +4,11 @@ import QuranDetails from '@/components/QuranDetails.vue'
 
 const routes = [
   {
+    path: '/',
+    name: "Home", 
+    component: () => import('@/components/HomeComponent.vue')
+  },
+  {
     path: '/quran', 
     name: 'quran', 
     component: TabbedContent,
@@ -13,7 +18,8 @@ const routes = [
     name: 'quran-details', 
     component: QuranDetails,
     props: true, // این خط باعث می‌شود مقادیر پارامترها به عنوان props به کامپوننت ارسال شوند
-  }
+  },
+ 
 ]
 
 const router = createRouter({

@@ -1,5 +1,5 @@
 <template>
-  <div class="audio-player">
+  <div class="audio-player" :class="{ active: currentSurah }">
     <!-- نوار پیشرفت -->
     <div class="progress-container" @click="seek">
       <div class="progress-bar" :style="{ width: progress + '%' }"></div>
@@ -10,22 +10,34 @@
 
     <!-- کنترل‌ها -->
     <div class="controls">
+
+      <!-- ضربدر -->
+      <button  
+        style="font-size: 1.5rem;"
+        v-if="currentSurah" 
+        @click="clearCurrentSurah" 
+        class="icon-button"
+      >
+        ✕
+      </button>
+
       <!-- تنظیمات -->
       <div class="menu-group">
         <button @click="toggleMenuTooltip" class="icon-button">
           <i class="fas fa-ellipsis-h"></i>
         </button>
 
-        <!-- پنل تنظیمات -->
         <div class="volume-tooltip volume-tooltip-width-for-panel-setting" v-if="showMenu">
-          <div class="translation-box border-green">
+          <div class="translation-box border-green" style="margin-bottom: 0;">
             <h6 class="panel-title text-yellow-400 font-semibold mb-2">تنظیمات صوت</h6>
 
             <!-- انتخاب قاری -->
             <div class="form-group flex flex-col gap-1 w-full">
               <label class="form-label">انتخاب قاری:</label>
-              <select v-model="settings.qari[0]" class="form-select flex-1">
-                <option v-for="(q, index) in settings.qari" :key="index">{{ q }}</option>
+              <select v-model="settings.selectedQari" class="form-select flex-1">
+                <option v-for="q in settings.qari" :key="q.id" :value="q">
+                  {{ q.name }} ({{ q.type }})<span v-if="q.language"> ({{q.language}})</span>
+                </option>
               </select>
             </div>
             <hr>
@@ -37,26 +49,34 @@
                 محدوده پخش
               </label>
               <div v-if="settings.rangeEnabled" class="flex flex-col gap-2">
+                <!-- از -->
                 <div class="display flex items-center gap-2">
                   <label class="w-12">از:</label>
-                  <select v-model="settings.from[0]" class="form-select flex-1">
-                    <option v-for="(f, index) in settings.from" :key="index">{{ f }}</option>
-                  </select>
-                </div>
-                <div class="display flex items-center gap-2">
-                  <label class="w-12">تا:</label>
-                  <select v-model="settings.to[0]" class="form-select flex-1">
-                    <option v-for="(t, index) in settings.to" :key="index">{{ t }}</option>
+                  <select v-model="settings.fromIndex" class="form-select flex-1 custom-offcanvas">
+                    <option v-for="(f, index) in settings.from" :key="index" :value="index">
+                      {{ f.surahName }} ({{ f.aya }})
+                    </option>
                   </select>
                 </div>
 
-                <!-- تکرار محدوده -->
+                <!-- تا -->
+                <div class="display flex items-center gap-2">
+                  <label class="w-12">تا:</label>
+                  <select v-model="settings.toIndex" class="form-select flex-1 custom-offcanvas">
+                    <option 
+                      v-for="(t, index) in filteredToOptions" 
+                      :key="index" 
+                      :value="index + settings.fromIndex">
+                      {{ t.surahName }} ({{ t.aya }})
+                    </option>
+                  </select>
+                </div>
+
                 <div class="display flex flex-col gap-1">
                   <label style="width: 150px;">تکرار محدوده:</label>
                   <input type="number" min="1" v-model="settings.repeatRange" class="form-input" />
                 </div>
 
-                <!-- تکرار آیه -->
                 <div class="display flex flex-col gap-1">
                   <label style="width: 150px;">تکرار آیه:</label>
                   <input type="number" min="1" v-model="settings.repeatAya" class="form-input" />
@@ -68,12 +88,13 @@
             <!-- سرعت پخش -->
             <div class="form-group flex items-center gap-2 w-full">
               <label class="w-28">سرعت پخش:</label>
-              <select v-model="settings.speed" class="form-select flex-1">
+              <select v-model="settings.speed" class="form-select flex-1 custom-offcanvas">
                 <option v-for="(s, index) in settings.speedOptions" :key="index" :value="s.value">
                   {{ s.label }}
                 </option>
               </select>
             </div>
+
             <hr>
 
             <!-- وقفه بعد از قرائت -->
@@ -84,7 +105,7 @@
               </label>
               <input
                 v-if="settings.pauseAfter"
-                v-model="settings.pauseDuration"
+                v-model="settings.PauseAfterRecitation"
                 type="number"
                 min="1"
                 class="form-input"
@@ -94,7 +115,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- کنترل پخش -->
       <button @click="rewind" class="icon-button" title="۱۰ ثانیه عقب">
         <i class="fas fa-rotate-left"></i>
@@ -115,35 +136,33 @@
         </button>
         <div class="volume-tooltip" v-if="showVolume">
           <div class="translation-box border-green" style="padding: 3px 2px 2px 2px ; margin-bottom: 0;">
-          <input type="range" min="0" max="1" step="0.01" v-model="volume" />
+            <input type="range" min="0" max="1" step="0.01" v-model="volume" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- زمان کل -->
-    <span class="time-label">{{ formatTime(duration) }}</span>
+    <span class="time-label">{{ formatTime(totalDuration) }}</span>
 
     <!-- پلیر -->
     <audio
       ref="audioRef"
-      :src="data"
       @timeupdate="updateTime"
       @loadedmetadata="setDuration"
     ></audio>
   </div>
 </template>
+
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount, defineProps } from "vue";
+import { useStore } from "vuex";
+import axios from "axios";
 
-// --- Props ---
-const props = defineProps({
-  data: String,
-  // selectedWord: Array,
-});
+const store = useStore();
+const props = defineProps({ data: String });
 
-// --- Refs & State ---
-const audioRef = ref(null);
+const audioRef = ref(new Audio());
 const isPlaying = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
@@ -151,135 +170,260 @@ const progress = ref(0);
 const volume = ref(1);
 const showMenu = ref(false);
 const showVolume = ref(false);
-const audioSrc = ref("");
 
+const currentSurah = computed(() => store.state.currentSurah);
+const audioList = ref([]);
+const currentAudioIndex = ref(0);
 
+// --- تنظیمات ---
 const settings = ref({
-  qari: ["مکارم (کبیری) (ترجمه صوتی)", "عبدالباسط", "منشاوی"],
+  qari: [],
+  selectedQari: null,
   rangeEnabled: false,
-  from: ["حمد (۱)", "فاتحه (۱)", "بقره (۱)"],
-  to: ["حمد (۱)", "فاتحه (۱)", "بقره (۱)"],
-  repeatRange: 2,
+  from: [],
+  to: [],
+  fromIndex: 0,
+  toIndex: 0,
+  repeatRange: 1,
   repeatAya: 1,
-  speed: 1,
   speedOptions: [
     { value: 0.5, label: "۰.۵x" },
     { value: 1, label: "۱x" },
     { value: 1.5, label: "۱.۵x" },
     { value: 2, label: "۲x" },
+    { value: 2.5, label: "۲.۵x" },
   ],
+  speed: 1,
   pauseAfter: false,
-  pauseDuration: 3,
+  PauseAfterRecitation: 1,
 });
 
-// --- Watchers ---
-watch(
-  () => props.data,
-  (newVal) => {
-    if (newVal) {
-      audioSrc.value = newVal;
-      reloadAudio();
-    }
-  },
-  { immediate: true }
-);
+// --- ساخت لیست آیات بر اساس currentSurah ---
+watch(currentSurah, (newSurah) => {
+  if (!newSurah) return;
+  const ayat = Array.from({ length: newSurah.aya_count }, (_, i) => ({
+    id: i + 1,
+    surahName: newSurah.name,
+    aya: i + 1,
+  }));
+  settings.value.from = ayat;
+  settings.value.to = ayat;
+  settings.value.fromIndex = 0;
+  settings.value.toIndex = ayat.length - 1;
+}, { immediate: true });
 
-watch(
-  () => volume.value,
-  (val) => {
-    if (audioRef.value) {
-      audioRef.value.volume = val;
-    }
-  }
-);
-
-// --- Methods ---
-const reloadAudio = () => {
-  const audio = audioRef.value;
-  if (audio) {
-    audio.pause();
-    audio.load();
-    isPlaying.value = false;
-    currentTime.value = 0;
-    progress.value = 0;
+// --- دریافت قاری‌ها ---
+const fetchQariList = async () => {
+  try {
+    const res = await axios.get("http://localhost:8000/api/v1/quran/qari/");
+    settings.value.qari = res.data;
+    settings.value.selectedQari = res.data.length > 1 ? res.data[1] : res.data[0] || null;
+    settings.value.speed = settings.value.speedOptions[1]?.value || 1;
+  } catch (err) {
+    console.error("Error fetching qari list:", err);
   }
 };
 
+// --- Watchers ---
+watch(volume, (val) => {
+  if (audioRef.value) audioRef.value.volume = val;
+});
+
+// --- دریافت فایل صوتی سوره ---
+const fetchSurahAudio = async () => {
+  if (!currentSurah.value || !settings.value.selectedQari) return;
+  try {
+    const qariId = settings.value.selectedQari.id;
+    const surahId = currentSurah.value.id;
+    const res = await axios.get(
+      `http://localhost:8000/api/v1/quran/audio/collection/?qari_id=${qariId}&surah_id=${surahId}`
+    );
+    audioList.value = res.data.audio_urls || [];
+    currentAudioIndex.value = settings.value.fromIndex;
+    if (audioList.value.length) playNextAudio();
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+// --- پخش صوت بدون ارور ---
+let isAudioPlaying = false;
+
+const playNextAudio = async () => {
+  if (!audioRef.value || currentAudioIndex.value >= audioList.value.length) {
+    isPlaying.value = false;
+    return;
+  }
+
+  if (isAudioPlaying) return; // جلوگیری از تداخل
+  isAudioPlaying = true;
+
+  try {
+    // بروزرسانی آیه جاری
+    const currentAyaNumber = currentAudioIndex.value + 1;
+    store.dispatch("updateCurrentAya", {
+      ayaNumber: currentAyaNumber,
+      surahId: currentSurah.value.id,
+    });
+
+    audioRef.value.pause();
+    audioRef.value.currentTime = 0;
+    audioRef.value.src = audioList.value[currentAudioIndex.value];
+    audioRef.value.playbackRate = settings.value.speed;
+
+    await audioRef.value.play();
+    isPlaying.value = true;
+
+    audioRef.value.onended = async () => {
+      if (settings.value.repeatAya > 1) {
+        settings.value.repeatAya--;
+      } else {
+        settings.value.repeatAya = 1;
+        currentAudioIndex.value++;
+        if (settings.value.rangeEnabled && currentAudioIndex.value > settings.value.toIndex) {
+          currentAudioIndex.value = settings.value.fromIndex;
+          if (settings.value.repeatRange > 1) {
+            settings.value.repeatRange--;
+          } else {
+            isPlaying.value = false;
+            isAudioPlaying = false;
+            return;
+          }
+        }
+      }
+
+      if (settings.value.pauseAfter) {
+        setTimeout(playNextAudio, settings.value.PauseAfterRecitation * 1000);
+      } else {
+        playNextAudio();
+      }
+    };
+  } catch (err) {
+    console.error("Audio play error:", err);
+  } finally {
+    isAudioPlaying = false;
+  }
+};
+
+// --- کنترل پخش ---
+const startSurahPlayback = () => fetchSurahAudio();
+
+const clearCurrentSurah = () => {
+  // توقف پخش صوت
+  if (audioRef.value) {
+    audioRef.value.pause();
+    audioRef.value.currentTime = 0;
+  }
+
+  // ریست کردن وضعیت پلیر
+  isPlaying.value = false;
+  audioList.value = [];
+  currentAudioIndex.value = 0;
+  currentTime.value = 0;
+  progress.value = 0;
+
+  // پاک کردن سوره جاری در store
+  store.dispatch("updateCurrentSurah", null);
+  store.dispatch("updateCurrentAya", null);
+};
+
+
+const togglePlay = async () => {
+  if (!audioRef.value) return;
+  if (!audioList.value.length) {
+    await fetchSurahAudio();
+    return;
+  }
+  if (isPlaying.value) {
+    audioRef.value.pause();
+    isPlaying.value = false;
+  } else {
+    try {
+      await audioRef.value.play();
+      isPlaying.value = true;
+    } catch (err) {
+      console.error("Play error:", err);
+    }
+  }
+};
+
+// --- مدیریت زمان ---
+const totalDuration = ref(0);
+const audioDurations = ref([]);
+
+const loadAudioDurations = async () => {
+  audioDurations.value = [];
+  totalDuration.value = 0;
+  for (let url of audioList.value) {
+    const audio = new Audio(url);
+    await new Promise((resolve) => {
+      audio.addEventListener("loadedmetadata", () => {
+        audioDurations.value.push(audio.duration);
+        totalDuration.value += audio.duration;
+        resolve();
+      });
+    });
+  }
+};
+
+watch(audioList, async () => {
+  if (audioList.value.length) await loadAudioDurations();
+});
+
 const updateTime = () => {
-  const audio = audioRef.value;
-  currentTime.value = audio.currentTime;
-  progress.value = duration.value
-    ? (currentTime.value / duration.value) * 100
+  if (!audioRef.value) return;
+  let elapsed = 0;
+  for (let i = 0; i < currentAudioIndex.value; i++) {
+    elapsed += audioDurations.value[i] || 0;
+  }
+  currentTime.value = elapsed + (audioRef.value.currentTime || 0);
+  progress.value = totalDuration.value
+    ? (currentTime.value / totalDuration.value) * 100
     : 0;
 };
 
 const setDuration = () => {
-  duration.value = audioRef.value.duration;
+  if (audioRef.value && audioDurations.value[currentAudioIndex.value])
+    duration.value = audioDurations.value[currentAudioIndex.value];
 };
 
-const togglePlay = () => {
-  const audio = audioRef.value;
-  if (audio.paused) {
-    audio.play();
-    isPlaying.value = true;
-  } else {
-    audio.pause();
-    isPlaying.value = false;
-  }
-};
+const formatTime = (t) =>
+  `${Math.floor(t / 60)}:${Math.floor(t % 60).toString().padStart(2, "0")}`;
 
 const rewind = () => {
-  const audio = audioRef.value;
-  audio.currentTime = Math.max(audio.currentTime - 10, 0);
+  if (audioRef.value) audioRef.value.currentTime = Math.max(audioRef.value.currentTime - 10, 0);
 };
-
 const forward = () => {
-  const audio = audioRef.value;
-  audio.currentTime = Math.min(audio.currentTime + 10, duration.value);
+  if (audioRef.value) audioRef.value.currentTime = Math.min(audioRef.value.currentTime + 10, duration.value);
 };
 
-const seek = (event) => {
-  const audio = audioRef.value;
-  const width = event.currentTarget.clientWidth;
-  const clickX = event.offsetX;
-  audio.currentTime = (clickX / width) * duration.value;
-};
-
-const formatTime = (time) => {
-  const m = Math.floor(time / 60);
-  const s = Math.floor(time % 60);
-  return `${m}:${s < 10 ? "0" : ""}${s}`;
-};
-
-const toggleMenuTooltip = () => {
-  showMenu.value = !showMenu.value;
-  showVolume.value = false;
-};
-
-const toggleVolumeTooltip = () => {
-  showVolume.value = !showVolume.value;
-  showMenu.value = false;
-};
+// --- مدیریت منو ---
+const toggleMenuTooltip = () => { showMenu.value = !showMenu.value; showVolume.value = false; };
+const toggleVolumeTooltip = () => { showVolume.value = !showVolume.value; showMenu.value = false; };
 
 const onDocumentClick = (e) => {
   if (!e.target.closest(".menu-group")) showMenu.value = false;
   if (!e.target.closest(".volume-group")) showVolume.value = false;
 };
 
-const handleWordClick = (word) => {
-  console.log("Clicked word:", word);
-};
+watch(currentSurah, (newSurah) => {
+  if (newSurah && newSurah.automatic_sound) {
+    fetchSurahAudio();
+  }
+});
 
-// --- Lifecycle Hooks ---
 onMounted(() => {
   document.addEventListener("click", onDocumentClick);
-  if (audioRef.value) audioRef.value.volume = volume.value;
+  audioRef.value.volume = volume.value;
+  fetchQariList();
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", onDocumentClick);
+  audioRef.value.pause();
 });
 </script>
+
 
 
 <style scoped>
@@ -296,7 +440,11 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   padding: 0 1rem;
   z-index: 999;
-  /* transform: translateY(71px); */
+  transform: translateY(60px); /* پیش فرض مخفی */
+  transition: transform 0.3s ease; /* انیمیشن نرم */
+}
+.audio-player.active {
+  transform: translateY(0px); /* وقتی currentSurah مقدار داشته باشه */
 }
 
 .progress-container {
@@ -455,5 +603,15 @@ onBeforeUnmount(() => {
 
 .border-green {
   border-color: var(--green);
+}
+
+
+/* اسکرول سفارشی */
+.custom-offcanvas::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-offcanvas::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 </style>

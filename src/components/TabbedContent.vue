@@ -41,7 +41,12 @@
 
           <!-- بخش صوت صفحه با آیکون و متن کنار هم -->
           <div class="d-flex justify-content-between align-items-center mt-3" style="max-width: 80%; margin: 0 auto;">
-            <button type="button" class="button btn p-0 text-white d-flex align-items-center gap-2" style="margin-top: 4px;">
+            <button
+              type="button"
+              class="button btn p-0 text-white d-flex align-items-center gap-2"
+              style="margin-top: 4px;"
+              @click="playSurahAudio1"
+            >
               <i class="bi bi-play-fill fs-5"></i>
               <span>بخش صوت</span>
             </button>
@@ -79,21 +84,24 @@
                   <span
                     @click.stop="toggleTooltip(y.id); playAudioWord(y, surahno)"
                     :class="[
-                      y.type == 3 ? 'basmala word-hover fontSizeNumber font-QCF_P001' : 'normal-word word-hover custom-font',
+                      y.type == 3 ? 'word-hover fontSizeNumber ' : 'normal-word word-hover font-' + y.fontName,
                       'font-' + y.fontName,
                       'position-relative',
-                      'custom-font'
+                      'custom-font',
+                      (currentAya && y.verse_number === currentAya.ayaNumber && surahno === currentAya.surahId) ? 'ayah-highlight' : ''
                     ]"
-                    :style="y.type == 1 ? 'font-size: 35.28px;' : (y.type == 2 ? 'font-size: 3.3rem;' : (y.type == 3 ? 'font-size: 1rem;' : ''))"
+                    :id="'ayah-' + y.verse_number"
+                    :style="y.type == 1 ? 'font-size: 35.28px;' : (y.type == 2 ? 'font-size: 3.3rem;' : (y.type == 3 ? 'font-size: 2rem; ' : ''))"
                   >
-                    {{ y.type === 3 ? `﴿${y.code}﴾` : y.code }}
+                    {{ y.type === 3 ? `${y.code}` : y.code }}
 
-                    <!-- تولتیپ -->
+                    <!-- تولتیپ با گزینه اشتراک‌گذاری -->
                     <div
                       v-if="activeTooltipId === y.id"
                       class="custom-tooltip"
                       @click.stop
                     >
+                      <!-- هدر تولتیپ -->
                       <div class="d-flex justify-content-between align-items-center mb-2">
                         <small class="text-light">{{ y.code }}</small>
                         <button
@@ -105,20 +113,33 @@
                         ></button>
                       </div>
 
+                      <!-- دکمه‌های عملیاتی -->
                       <div class="d-flex justify-content-around gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-light" @click="playAudioWord(y)">
+                        <!-- پخش آیه -->
+                        <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-light" @click="playAudioWord(y)" title="پخش آیه">
                           <i class="bi bi-play-fill"></i>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" @click="copyWord(y.arabic_text)">
+
+                        <!-- کپی آیه -->
+                        <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="copyWord(y.arabic_text)" title="کپی آیه">
                           <i class="bi bi-clipboard"></i>
                         </button>
-                        <router-link :to="`/quran/details/${surahno}/${y.verse_number}`">
-                          <button type="button" class="btn btn-sm btn-outline-secondary">
+
+                        <!-- اشتراک‌گذاری -->
+                        <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="shareAya(y)" title="اشتراک‌گذاری آیه">
+                          <i class="bi bi-share-fill"></i>
+                        </button>
+
+                        <!-- ترجمه و تفسیر آیه -->
+                        <router-link :to="`/quran/details/${surahno}/${y.verse_number}`" style="display: contents;">
+                          <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" title="ترجمه و تفسیر">
                             <i class="bi bi-three-dots"></i>
                           </button>
                         </router-link>
+                        
                       </div>
                     </div>
+
                   </span>
                 </template>
               </div>
@@ -277,6 +298,11 @@
 import { ref, watch, nextTick, computed } from 'vue';
 import axios from 'axios';
 
+
+
+import { useStore } from 'vuex';
+const store = useStore();
+
 const props = defineProps({
   id_sure: Number
 });
@@ -284,6 +310,7 @@ const props = defineProps({
 // متغیرها
 const activeTab = ref('tab1');
 const surahTitleItems = ref([]);
+const verse_count = ref()
 const secondLineItems = ref([]);
 const filteredItems = ref([]);
 const surahno = ref(null);
@@ -303,6 +330,23 @@ const audioList = ref([]);
 const audioPlayer = ref(new Audio());
 const currentPageIndex = ref(null);
 let allPages = [];
+const currentAya = computed(() => store.state.currentAya);
+
+
+watch(
+  () => currentAya.value, 
+  (newVal) => {
+    if (newVal) {
+      const element = document.getElementById(`ayah-${newVal.ayaNumber}`);
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+      }
+    }
+  }
+);
 
 const playAllPagesAudio = async () => {
   if (!filteredItems.value.length) return;
@@ -317,6 +361,46 @@ const playAllPagesAudio = async () => {
   // شروع پخش از اولین صفحه
   await fetchPageAudio(allPages[currentPageIndex.value]);
 };
+
+
+
+const playSurahAudio1 = () => {
+  if (!surahTitleItems.value.length) return;
+
+  const surah = surahTitleItems.value[0];
+  store.dispatch('updateCurrentSurah', {
+    id: surah.id,
+    name: surah.name,
+    aya_count: verse_count.value,
+    automatic_sound: true
+  });
+
+};
+const shareAya = (y) => {
+  const url = window.location.href;
+  const text = y.arabic_text;
+
+  if (navigator.share) {
+    // موبایل / مرورگرهایی که Web Share API دارند
+    navigator.share({ title: `آیه: ${y.code}`, text, url })
+      .catch(err => console.error('خطا در اشتراک‌گذاری:', err));
+  } else {
+    // دسکتاپ یا مرورگر بدون پشتیبانی
+    const encodedUrl = encodeURIComponent(url);
+    const encodedText = encodeURIComponent(text);
+
+    // باز کردن پنجره اشتراک‌گذاری توی شبکه‌های اجتماعی
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+    const whatsappUrl = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
+
+    // نمونه: باز کردن پنجره توی توییتر
+    window.open(twitterUrl, '_blank', 'width=600,height=400');
+  }
+};
+
+
+
 
 const ayahAudioMap = ref({}); // آیه → لینک صوت
 
@@ -360,9 +444,6 @@ const playNextAudio = () => {
     playNextAudio();
   };
 };
-
-
-
 
 
 const goToNextPage = async () => {
@@ -534,6 +615,8 @@ const goToPrevSurah = () => {
   }
 };
 
+
+
 // بارگذاری سوره و تمام صفحات آن
 const loadSurah = async (url = null) => {
   const apiUrl = url || `http://localhost:8000/api/v1/quran/surahs/?id=${surahno.value}`;
@@ -544,6 +627,7 @@ const loadSurah = async (url = null) => {
     const surah = response.data.results[0];
     if (!url) {
       surahTitleItems.value = [surah];
+      verse_count.value = surah.verse_count
       secondLineItems.value = surah.bismillah || [];
     }
 
@@ -949,6 +1033,13 @@ watch(
   flex-shrink: 0;
 }
 
+.ayah-highlight {
+  background-color: rgba(0, 162, 255, 0.3); /* طلایی شفاف */
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+
 /* اسکرول سفارشی */
 .custom-offcanvas::-webkit-scrollbar {
   width: 6px;
@@ -957,4 +1048,6 @@ watch(
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
 }
+
+
 </style>

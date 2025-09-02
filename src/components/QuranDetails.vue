@@ -32,12 +32,12 @@
   </div>
 
   <div class="page-content container-fluid mt-4  p-4 rounded" style="margin-bottom: 100px;">
-    <div class="d-flex h-100">
+    <div class="d-flex h-100" style="min-height: 1400px;">
       <!-- ستون کناری -->
       <div class="d-flex flex-column me-3" style="width: 25%;">
         <!-- کادر پایین (نمایش آیه و اطلاعات) -->
         <div class="section-box flex-fill p-3" style="direction: rtl;">
-          <div class="mb-3 border rounded p-3 shadow-sm verse-box">
+          <div class="mb-3 border rounded p-3 shadow-sm verse-box" style="position: fixed;width: 365px;">
             <h5 class="mb-2 text-green fw-bold">۱. آیه 1 سوره نساء</h5>
 
             <div class="row">
@@ -70,15 +70,6 @@
                 <source src="https://example.com/audio2.mp3" type="audio/mp3">
               </audio>
             </div>
-          </div>
-        </div>
-
-
-        <div class="section-box mt-3 flex-fill">
-          <div class="mb-3 border rounded p-3 shadow-sm verse-box">
-
-          <h6 class="section-title">کادر بالا</h6>
-          <p v-for="i in 10" :key="i">محتوای زیاد شماره {{ i }}</p>
           </div>
         </div>
       </div>
@@ -307,6 +298,7 @@ onMounted(async () => {
   } catch (error) {
     console.error("خطا در دریافت سوره‌ها:", error)
   }
+
 })
 
 // ✅ ساخت لیست آیات
