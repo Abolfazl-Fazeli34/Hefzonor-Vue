@@ -8,8 +8,10 @@
     <InfoBar @toggle-menu="toggleMenu" />
 
     <!-- Side Menu -->
-    <SideMenu :isOpen="isMenuOpen" @close="closeMenu" @selectSurah="handleSurahSelected" :selectedWord="selectedWord"/>
+    <SideMenu />
 
+    <!-- Side Settings -->
+    <SideSettings />
     
     <!-- Main Content via router -->
     <!-- <router-view :id_sure="id_sure" :filtered-items="filteredItems" :selectedWord="selectedWord" @send-audio-data="handleAudioData" @wordClicked="handleWordClick" /> -->
@@ -38,7 +40,7 @@ import SideMenu from './components/SideMenu.vue'
 import AudioPlayer from './components/AudioPlayer.vue'
 import TabbedContent from './components/TabbedContent.vue'
 import QuranDetails from './components/QuranDetails.vue'
-
+import SideSettings from './components/SideSettings.vue'
 
 
 export default {
@@ -50,6 +52,7 @@ export default {
     AudioPlayer,
     TabbedContent,
     QuranDetails,
+    SideSettings
   },
   data() {
     return {

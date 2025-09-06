@@ -14,6 +14,11 @@ const routes = [
     component: TabbedContent,
   },
   {
+    path: '/Search', 
+    name: 'Search', 
+    component: () => import('@/components/SearchComponent.vue'),
+  },
+  {
     path: '/quran/details/:surahno/:verse_number', 
     name: 'quran-details', 
     component: QuranDetails,

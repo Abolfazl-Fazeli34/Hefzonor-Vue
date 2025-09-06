@@ -172,6 +172,12 @@ const showMenu = ref(false);
 const showVolume = ref(false);
 
 const currentSurah = computed(() => store.state.currentSurah);
+const startAyaNumber = computed(() => store.getters.getStartAyaNumber);
+// watch(startAyaNumber, (val) => {
+//   console.log('startAyaNumber updated:', val);
+// }, { immediate: true });
+
+
 const audioList = ref([]);
 const currentAudioIndex = ref(0);
 
@@ -197,6 +203,7 @@ const settings = ref({
   pauseAfter: false,
   PauseAfterRecitation: 1,
 });
+
 
 // --- ساخت لیست آیات بر اساس currentSurah ---
 watch(currentSurah, (newSurah) => {
@@ -230,21 +237,56 @@ watch(volume, (val) => {
 });
 
 // --- دریافت فایل صوتی سوره ---
+// watcher روی startAyaNumber
+watch(startAyaNumber, async (val) => {
+  if (!currentSurah.value || !settings.value.selectedQari) return;
+
+  // توقف پخش صوت قبلی
+  if (audioRef.value && !audioRef.value.paused) {
+    audioRef.value.pause();
+    isPlaying.value = false;
+  }
+
+  // تعیین آیه شروع
+  if (val) {
+    currentAudioIndex.value = val - 1; // چون ایندکس از 0 شروع می‌شود
+  } else {
+    currentAudioIndex.value = settings.value.fromIndex;
+  }
+
+  // اگر audioList قبلاً لود شده، از همان ایه شروع به پخش کن
+  if (audioList.value.length) {
+    playNextAudio();
+  } else {
+    // در غیر این صورت ابتدا فایل صوتی سوره را لود کن
+    await fetchSurahAudio();
+  }
+}, { immediate: true });
+
+// اصلاح fetchSurahAudio
 const fetchSurahAudio = async () => {
   if (!currentSurah.value || !settings.value.selectedQari) return;
+
   try {
     const qariId = settings.value.selectedQari.id;
     const surahId = currentSurah.value.id;
+
     const res = await axios.get(
       `http://localhost:8000/api/v1/quran/audio/collection/?qari_id=${qariId}&surah_id=${surahId}`
     );
     audioList.value = res.data.audio_urls || [];
-    currentAudioIndex.value = settings.value.fromIndex;
+
+    // فقط وقتی startAyaNumber تغییر کرده و watcher فعال نشده، index را تنظیم کن
+    if (!currentAudioIndex.value) {
+      currentAudioIndex.value = startAyaNumber.value ? startAyaNumber.value - 1 : settings.value.fromIndex;
+    }
+
     if (audioList.value.length) playNextAudio();
   } catch (err) {
     console.error(err);
   }
 };
+
 
 // --- پخش صوت بدون ارور ---
 let isAudioPlaying = false;

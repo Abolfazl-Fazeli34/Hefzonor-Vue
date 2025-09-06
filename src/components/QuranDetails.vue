@@ -76,7 +76,7 @@
 
       <!-- محتوای اصلی -->
       <div class="flex-grow-1 d-flex flex-column section-box content-box">
-        <div class="mb-3 border rounded p-3 shadow-sm verse-box">
+        <div class="mb-3 border rounded p-3 shadow-sm verse-box" style="width: 1198px;">
 
 
         <!-- آیه

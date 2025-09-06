@@ -33,17 +33,17 @@
               v-for="word in secondLineItems"
               :key="word.id"
               style="font-size: 2.4rem;"
-              :class="word.type === 3 ? 'basmala word-hover QCF_BSML' : 'normal-word word-hover QCF_BSML'"
+              :class="word.type === 3 ? 'basmala QCF_BSML' : 'normal-word QCF_BSML'"
             >
               {{ word.code }}
             </span>
           </div>
 
           <!-- بخش صوت صفحه با آیکون و متن کنار هم -->
-          <div class="d-flex justify-content-between align-items-center mt-3" style="max-width: 80%; margin: 0 auto;">
+          <div class="d-flex justify-content-between align-items-center mt-3 " style="max-width: 80%; margin: 0 auto;">
             <button
               type="button"
-              class="button btn p-0 text-white d-flex align-items-center gap-2"
+              class="button btn p-0 text-white d-flex align-items-center gap-2 icons-bar2"
               style="margin-top: 4px;"
               @click="playSurahAudio1"
             >
@@ -51,9 +51,10 @@
               <span>بخش صوت</span>
             </button>
 
-            <button type="button" class="button btn p-0 text-secondary">
+            <button type="button" class="button btn p-0 text-secondary icons-bar2" @click="openSettingsModal">
               <i class="bi bi-gear-fill fs-5"></i>
             </button>
+
           </div>
 
           <audio ref="wordAudio" :src="audioSrc" preload="auto"></audio>
@@ -81,19 +82,26 @@
                   v-for="y in group.items.filter(i => i.line === x.line)"
                   :key="`${y.id}-${y.verse_number}-${y.word_number}-${y.code}`"
                 >
-                  <span
-                    @click.stop="toggleTooltip(y.id); playAudioWord(y, surahno)"
-                    :class="[
-                      y.type == 3 ? 'word-hover fontSizeNumber ' : 'normal-word word-hover font-' + y.fontName,
-                      'font-' + y.fontName,
-                      'position-relative',
-                      'custom-font',
-                      (currentAya && y.verse_number === currentAya.ayaNumber && surahno === currentAya.surahId) ? 'ayah-highlight' : ''
-                    ]"
-                    :id="'ayah-' + y.verse_number"
-                    :style="y.type == 1 ? 'font-size: 35.28px;' : (y.type == 2 ? 'font-size: 3.3rem;' : (y.type == 3 ? 'font-size: 2rem; ' : ''))"
-                  >
-                    {{ y.type === 3 ? `${y.code}` : y.code }}
+                <span
+                  @mouseover="hoveredAyaNumber = y.verse_number"
+                  @mouseleave="hoveredAyaNumber = null"
+                  @click.stop="selectAya(y)"
+                  :class="[
+                    y.type == 3 ? 'word-hover fontSizeNumber ' : 'normal-word word-hover font-' + y.fontName,
+                    'font-' + y.fontName,
+                    'position-relative',
+                    'custom-font',
+                    (currentAya && y.verse_number === currentAya.ayaNumber && surahno === currentAya.surahId) ? 'ayah-highlight' : '',
+                    (hoveredAyaNumber === y.verse_number) ? 'hover-highlight' : ''
+                  ]"
+                  :id="'ayah-' + y.verse_number"
+                  :style="{
+                    fontSize: y.type == 1 ? '35.28px' : (y.type == 2 ? '3.3rem' : (y.type == 3 ? '2rem' : '')),
+                    opacity: (y.type !== 3 && hiddenAyas.has(y.verse_number)) ? 0 : 1,  // اگر type=3 باشه هیچوقت 0 نمی‌شود
+                    transition: 'opacity 0.5s'
+                  }"
+                >
+                  {{ y.type === 3 ? `${y.code}` : y.code }}
 
                     <!-- تولتیپ با گزینه اشتراک‌گذاری -->
                     <div
@@ -131,15 +139,32 @@
                         </button>
 
                         <!-- ترجمه و تفسیر آیه -->
-                        <router-link :to="`/quran/details/${surahno}/${y.verse_number}`" style="display: contents;">
+                        <router-link :to="`/quran/details/${surahno}/${y.verse_number ?? y.aya_index}`" style="display: contents;">
                           <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" title="ترجمه و تفسیر">
-                            <i class="bi bi-three-dots"></i>
+                            <i class="bi bi-globe2"></i>
                           </button>
                         </router-link>
-                        
+
+                        <!-- جستجوی کلمه -->
+                        <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="searchWord(y.arabic_text)" title="جستجوی کلمه">
+                          <i class="bi bi-search"></i>
+                        </button>
+
+                        <!-- علامت زدن / Bookmark -->
+                        <!-- علامت زدن با قلم -->
+                      <!-- دکمه‌ها (داخل v-for) -->
+                      <!-- دکمه (داخل v-for) -->
+                      <button 
+                        style="height: 50%;" 
+                        type="button" 
+                        class="btn btn-sm btn-outline-secondary" 
+                        @click="openBookmarkModal(y)" 
+                        title="علامت‌گذاری"
+                      >
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
                       </div>
                     </div>
-
                   </span>
                 </template>
               </div>
@@ -170,8 +195,11 @@
               سوره بعدی ◀
             </button>
           </div>
+
+
         </div>
       </div>
+
 
       <!-- تب آیه‌ای سوره -->
       <div v-show="activeTab === 'tab2'" class="tab-pane fade show active card p-4" :style="contentStyleTab2">
@@ -284,25 +312,206 @@
       </div>
 
     </div>
+    <!-- -------------- مودال علامت زدن--------------- -->
+    <div 
+      class="modal fade" 
+      id="bookmarkModal" 
+      tabindex="-1" 
+      aria-labelledby="bookmarkModalLabel" 
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered"> <!-- اینجا اضافه شد -->
+        <div class="modal-content">
+
+          <!-- هدر -->
+          <div class="modal-header">
+            <h5 class="modal-title" id="bookmarkModalLabel">انتخاب دسته‌بندی نشانه‌گذاری</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+          </div>
+
+          <!-- بادی -->
+          <div class="modal-body">
+            <label for="bookmarkCategory" class="form-label">دسته‌بندی:</label>
+            <select v-model="selectedCategory" id="bookmarkCategory" class="form-select flex-1 custom-offcanvas">
+              <option value="weak">ضعیف</option>
+              <option value="forgotten">فراموش شده</option>
+              <option value="attention">نیاز به دقت</option>
+            </select>
+          </div>
+
+          <!-- فوتر -->
+          <div class="modal-footer d-flex justify-content-between" dir="ltr">
+            <!-- دکمه سمت چپ -->
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+
+            <!-- دکمه‌های سمت راست -->
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-danger me-2" @click="removeBookmark">حذف علامت</button>
+              <button type="button" class="btn btn-primary" @click="confirmBookmark">تأیید</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- -------------- مودال تنظیمات صفحه -------------- -->
+    <div 
+        class="modal fade" 
+        id="settingsModal" 
+        tabindex="-1" 
+        aria-labelledby="settingsModalLabel" 
+        aria-hidden="true"
+        ref="settingsModal"
+      >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--bg-dark); color: #fff;">
+          
+          <!-- هدر  border-bottom border-secondary-->
+          <div class="modal-header " style="    border: none;"> 
+            <h5 class="modal-title" id="settingsModalLabel">تنظیمات</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+          </div>
+
+          <!-- تب‌ها -->
+          <ul class="nav nav-tabs justify-content-center gap-2" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button 
+                class="nav-link" 
+                :class="{ active: activeTab === 'page' }" 
+                @click="switchTab('page')"
+                type="button"
+              >تنظیمات صفحه</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button 
+                class="nav-link" 
+                :class="{ active: activeTab === 'text' }" 
+                @click="switchTab('text')"
+                type="button"
+              >تنظیمات متن</button>
+            </li>
+          </ul>
+
+
+          <!-- بادی تب‌ها -->
+          <div class="modal-body">
+
+            <!-- تب صفحه -->
+            <div v-if="activeTab2 === 'page'">
+              <div class="mb-3">
+                <label class="form-label">نحوه نمایش</label>
+                <select v-model="displayMode" class="form-select">
+                  <option 
+                    v-for="(label, value) in displayModes" 
+                    :key="value" 
+                    :value="value"
+                  >
+                    {{ label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">سرعت نمایش ایه</label>
+                <select v-model="verseSpeed" class="form-select">
+                  <option 
+                    v-for="(label, value) in verseSpeeds" 
+                    :key="value" 
+                    :value="value"
+                  >
+                    {{ label }}
+                  </option>
+                </select>
+              </div>
+
+
+              <div class="mb-2">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" v-model="option1" id="option1">
+                  <label class="form-check-label" for="option1">قاب حاشیه</label>
+                </div>
+                <select v-if="option1" v-model="option1Choice" class="form-select">
+                  <option value="choice1">سایه</option>
+                  <option value="choice2">تذهیب</option>
+                </select>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" v-model="option2" id="option2">
+                <label class="form-check-label" for="option2">تمام صفحه</label>
+              </div>
+            </div>
+
+            <!-- تب متن -->
+            <div v-if="activeTab2 === 'text'">
+              <div class="mb-3">
+                <label class="form-label">نوع نمایش</label>
+                <select v-model="textDisplayMode" class="form-select">
+                  <option value="verse">نمایش ایه‌ای</option>
+                  <option value="15lines">15 خطی</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">رنگ زمینه صفحه</label>
+                <input type="color" v-model="pageBackgroundColor" class="form-control form-control-color">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">رنگ زمینه ایه انتخابی</label>
+                <input type="color" v-model="selectedVerseBackgroundColor" class="form-control form-control-color">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">رنگ متن ایه انتخابی</label>
+                <input type="color" v-model="selectedVerseTextColor" class="form-control form-control-color">
+              </div>
+            </div>
+
+          </div>
+
+          <!-- فوتر -->
+          <div class="modal-footer" dir="ltr">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+            <button type="button" class="btn btn-primary" @click="saveSettings">ذخیره</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <!-- ----------------------------- -->
+  <!-- نوبار کناری -->
+  <div :class="['sidebar', { 'sidebar-active': isActive }]">
+  <button 
+    v-for="btn in buttons" 
+    :key="btn.id" 
+    :title="btn.title"
+    class="sidebar-btn"
+    :class="{ 'btn-active': btn.active }"
+    @click="selectedAya ? btn.action(selectedAya) : null"  
+  >
+    <i :class="btn.icon"></i>
+  </button>
+
+  <!-- <button class="toggle-btn" @click="toggleSidebar">
+    <i class="bi" :class="isActive ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+  </button> -->
+</div>
+
+
 
   </div>
 
-   <!-- ترجمه انگلیسی وسط -->
-                <!-- <div class="translation columns" style="justify-content: start;">
-                  The path of those upon whom Thou hast bestowed favors. Not (the path) of those upon whom Thy wrath is brought down, nor of those who go astray.
-                </div> -->
 </template>
 
 
 <script setup>
-import { ref, watch, nextTick, computed } from 'vue';
+import { ref, watch, nextTick, computed, onMounted ,onBeforeUnmount, reactive } from 'vue';
 import axios from 'axios';
-
-
-
+import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
-const store = useStore();
+import { Modal } from "bootstrap";
 
+const store = useStore();
+const router = useRouter();
 const props = defineProps({
   id_sure: Number
 });
@@ -331,7 +540,92 @@ const audioPlayer = ref(new Audio());
 const currentPageIndex = ref(null);
 let allPages = [];
 const currentAya = computed(() => store.state.currentAya);
+const hoveredAyaNumber = ref(null);
+const selectedAya = ref(null); // ایه فعلی که نوبار روی آن کار می‌کند
+const hiddenAyas = reactive(new Set()); // ایه‌هایی که محو شده‌اند
+const isActive = ref(false);
 
+
+// پیش‌فرض تب فعال
+const activeTab3 = ref('page'); // اینجا 'page' پیش‌فرض فعال است
+
+// تابع برای تغییر تب
+const switchTab3 = (tabName) => {
+  activeTab.value = tabName;
+};
+
+
+const displayModes = {
+  full: "نمایش کامل ایه",
+  start: "ابتدای ایات",
+  end: "انتهای ایات",
+  start_end: "ابتدا و انتهای ایات",
+  page_word_start: "کلمه ابتدای صفحه",
+  page_word_end: "کلمه انتهای صفحه",
+  page_word_start_end: "کلمه ابتدا و انتهای صفحه",
+  page_verse_start: "ایه ابتدای صفحه",
+  page_verse_end: "ایه انتهای صفحه",
+  page_verse_start_end: "ایات ابتدا و انتهای صفحه",
+  even: "ایات زوج",
+  odd: "ایات فرد",
+  multiple5: "ایات مضرب 5",
+  number_only: "فقط شماره ایات"
+}
+
+const verseSpeeds = {
+  instant: "نمایش یک باره",
+  very_fast: "بسیار سریع",
+  fast: "سریع",
+  medium: "متوسط",
+  smooth: "ملایم",
+  slow: "کند"
+}
+
+// تعریف دکمه‌ها
+const buttons = reactive([
+  { id: 1, icon: 'bi bi-eye-slash',   title: 'محو کردن ایه', action: (aya) => {
+      if (!aya) return;
+
+      if (hiddenAyas.has(aya.verse_number)) {
+        hiddenAyas.delete(aya.verse_number); // دوباره نمایش بده
+      } else {
+        hiddenAyas.add(aya.verse_number);    // محو کن
+      }
+
+      // تغییر آیکون چشم بر اساس وضعیت ایه
+      buttons[0].icon = hiddenAyas.has(aya.verse_number)
+        ? 'bi bi-eye'       // چشم باز وقتی محو شد
+        : 'bi bi-eye-slash'; // چشم بسته وقتی نمایش داده شد
+    }},
+  { 
+  id: 2, 
+  icon: 'bi bi-globe2', 
+  title: 'ترجمه و تفسیر', 
+  action: (aya) => {
+    router.push({
+      name: 'quran-details',
+      params: {
+        surahno: surahno.value,
+        verse_number: aya.verse_number ?? aya.aya_index
+      }
+    });
+  }
+},
+  { id: 3, icon: 'bi bi-volume-up', title: 'صوت آیه', action: (aya) => { console.log('صوت', aya); }},
+  { id: 4, icon: 'bi bi-bookmark-plus', title: 'افزودن به حفظ', action: (aya) => { console.log('حفظ', aya); }},
+  { id: 5, icon: 'bi bi-person-plus', title: 'افزودن دانش‌آموز', action: (aya) => { console.log('دانش‌آموز', aya); }},
+  { id: 6, icon: 'bi bi-pencil-square', title: 'افزودن یادداشت', action: (aya) => { console.log('یادداشت', aya); }},
+  { id: 7, icon: 'bi bi-journal', title: 'یادداشت‌های ایه', action: (aya) => { console.log('یادداشت ایه', aya); }},
+  { id: 8, icon: 'bi bi-bookmark', title: 'نشان کردن ایه', action: (aya) => { console.log('نشان ایه', aya); }},
+  { id: 9, icon: 'bi bi-clipboard', title: 'کپی ایه', action: (aya) => { console.log('کپی', aya); }},
+  { id: 10, icon: 'bi bi-share-fill', title: 'اشتراک گذاری ایه', action: (aya) => { console.log('اشتراک', aya); }},
+]);
+
+
+// تغییر وضعیت نوبار فعال / غیر فعال
+const toggleSidebar = () => {
+  isActive.value = !isActive.value;
+};
 
 watch(
   () => currentAya.value, 
@@ -364,6 +658,16 @@ const playAllPagesAudio = async () => {
 
 
 
+const selectAya = (aya) => {
+  // console.log("selected aya:", aya);
+
+  store.dispatch('updateStartAyaNumber', aya.verse_number);
+  selectedAya.value = aya; 
+  isActive.value = true;
+  toggleTooltip(aya.id, aya.verse_number);
+
+};
+
 const playSurahAudio1 = () => {
   if (!surahTitleItems.value.length) return;
 
@@ -372,7 +676,7 @@ const playSurahAudio1 = () => {
     id: surah.id,
     name: surah.name,
     aya_count: verse_count.value,
-    automatic_sound: true
+    automatic_sound: true,
   });
 
 };
@@ -549,6 +853,7 @@ const loadVersesWithTranslation = async (surahId) => {
     const verseNumbers = new Set();
     filteredItems.value.forEach(pageGroup => {
       pageGroup.items.forEach(word => {
+        if (word.hidden === undefined) word.hidden = false;
         if (word.verse_number) verseNumbers.add(word.verse_number);
       });
     });
@@ -730,12 +1035,34 @@ const playAudioWord = (word, surah = surahno.value) => {
 };
 
 // مدیریت تولتیپ
-const toggleTooltip = (id) => {
+const toggleTooltip = (id, verseNumber) => {
   activeTooltipId.value = activeTooltipId.value === id ? null : id;
+
+  // وقتی روی کلمه کلیک شد، کل آیه هایلایت شود
+  if (verseNumber) {
+    store.commit('setCurrentAya', { ayaNumber: verseNumber, surahId: surahno.value });
+  }
 };
+
+
 const closeTooltip = () => {
   activeTooltipId.value = null;
 };
+
+const handleOutsideClick = (e) => {
+  if (e.target.closest(".custom-tooltip") || e.target.closest(".btn-close")) return;
+
+  activeTooltipId.value = null;
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleOutsideClick);
+});
+
+// حذف listener هنگام unmount
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleOutsideClick);
+});
 
 // کپی کردن متن
 const copyWord = (text) => {
@@ -746,6 +1073,75 @@ const copyWord = (text) => {
   } else {
     alert('کپی متن پشتیبانی نمی‌شود');
   }
+};
+
+const removeDiacritics = (text) => {
+  return text.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "");
+};
+
+const searchWord = (word) => {
+  const cleanedWord = removeDiacritics(word);
+  router.push({
+    name: 'Search',
+    query: { query: cleanedWord }
+  });
+};
+
+const selectedWord = ref(null);
+const selectedCategory = ref("weak");
+let bookmarkModalInstance = null;
+
+const openBookmarkModal = (word) => {
+  selectedWord.value = word;
+  selectedCategory.value = word.bookmarkCategory || "weak";
+
+  const modalEl = document.getElementById("bookmarkModal");
+  bookmarkModalInstance = Modal.getOrCreateInstance(modalEl);
+  bookmarkModalInstance.show();
+};
+
+const confirmBookmark = () => {
+  if (selectedWord.value) {
+    selectedWord.value.bookmarked = true;
+    selectedWord.value.bookmarkCategory = selectedCategory.value;
+    console.log("نشانه‌گذاری شد:", selectedWord.value);
+  }
+  bookmarkModalInstance.hide();
+};
+
+const removeBookmark = () => {
+  if (selectedWord.value) {
+    selectedWord.value.bookmarked = false;
+    delete selectedWord.value.bookmarkCategory;
+    console.log("علامت حذف شد:", selectedWord.value);
+  }
+  bookmarkModalInstance.hide();
+};
+
+// -------------------------------------
+
+const settingsModal = ref(null);
+const activeTab2 = ref("page"); // default tab
+const displayMode = ref(Object.keys(displayModes)[0])  
+const verseSpeed = ref(Object.keys(verseSpeeds)[0]) 
+const option1 = ref(false);
+const option1Choice = ref("choice1");
+const option2 = ref(false);
+
+// تنظیمات متن
+const textDisplayMode = ref("verse");
+const pageBackgroundColor = ref("#1a1a1a");
+const selectedVerseBackgroundColor = ref("#363636");
+const selectedVerseTextColor = ref("#00bfff");
+
+const openSettingsModal = () => {
+  const modalEl = settingsModal.value;
+  const modalInstance = new Modal(modalEl, { backdrop: 'static' });
+  modalInstance.show();
+};
+
+const switchTab = (tab) => {
+  activeTab2.value = tab;
 };
 
 // واکنش به تغییر props.id_sure
@@ -794,7 +1190,7 @@ watch(
 }
 
 .normal-word {
-  color: white;
+  color: rgba(255, 255, 255, 0.979);
   font-size: 1.5rem;
   /* margin: 0 1px; */
 }
@@ -994,6 +1390,24 @@ watch(
 
 .icons-bar i:hover {
   color: #fff;
+  transform: scale(1.1);
+}
+
+.icons-bar2 {
+  display: flex;
+  gap: 1rem;
+  color: #aaa;
+  font-size: 1rem;
+}
+
+.icons-bar2 i {
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+
+.icons-bar2 i:hover {
+  color: #fff;
   transform: scale(1.2);
 }
 
@@ -1034,11 +1448,175 @@ watch(
 }
 
 .ayah-highlight {
-  background-color: rgba(0, 162, 255, 0.3); /* طلایی شفاف */
+  background-color: rgba(9, 164, 253, 0.452); /* طلایی شفاف */
   border-radius: 6px;
   transition: background-color 0.3s ease;
 }
 
+
+.hover-highlight {
+  background-color: #3636367a; /* رنگ توسی دلخواه */
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+/* مودال سفارشی */
+.modal-content {
+  background-color: var(--bg-dark); /* پس‌زمینه تیره */
+  color: #fff; /* متن سفید */
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* هدر مودال */
+.modal-header {
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-dark-light);
+}
+
+.modal-title {
+  color: #f1f1f1;
+  font-weight: bold;
+}
+
+/* بادی مودال */
+.modal-body {
+  background-color: var(--bg-dark);
+  color: #ddd;
+}
+
+/* لیبل‌ها */
+.modal-body label {
+  color: #bbb;
+}
+
+/* سلکتور داخل مودال */
+.modal-body .form-select {
+  background-color: var(--bg-dark);
+  color: #fff;
+  border: 1px solid var(--border-color);
+}
+
+.modal-body .form-select option {
+  background-color: var(--bg-dark);
+  color: #fff;
+}
+
+.modal-body .form-select:focus {
+  background-color: var(--bg-dark-light);
+  color: #fff;
+  border-color: #0dcaf0; /* آبی روشن */
+  box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.25);
+}
+
+/* فوتر مودال */
+.modal-footer {
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-dark-light);
+}
+
+/* دکمه‌ها */
+.modal-footer .btn {
+  border-radius: 6px;
+}
+
+.modal-footer .btn-primary {
+  background-color: #0dcaf0;
+  border-color: #0dcaf0;
+}
+
+.modal-footer .btn-primary:hover {
+  background-color: #0bb8d8;
+  border-color: #0bb8d8;
+}
+
+.modal-footer .btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.modal-footer .btn-danger:hover {
+  background-color: #bb2d3b;
+  border-color: #bb2d3b;
+}
+
+.modal-footer .btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.modal-footer .btn-secondary:hover {
+  background-color: #5a6268;
+  border-color: #545b62;
+}
+
+
+/* نوبار فیکس کناری */
+
+
+.sidebar {
+  position: fixed;
+  /* bottom: 20px; */
+  left: 22%;
+  /* bottom: 50%; */
+  top: 35%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: -3px;
+  background-color: var(--bg-dark-light);
+  padding: 3px 5px;
+  border-radius: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  opacity: 0.5;
+  transition: all 0.3s ease;
+  z-index: 1050;
+  border: 1px solid;
+}
+
+.sidebar-active {
+  opacity: 1;
+}
+
+/* دکمه‌ها */
+.sidebar-btn {
+  background-color: var(--bg-dark);
+  color: #fff;
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.2s;
+}
+
+.sidebar-btn:hover {
+  /* background-color: #0dcaf0; */
+  transform: scale(1.05);
+}
+
+/* دکمه فعال */
+.btn-active {
+  background-color: #00bfff;
+}
+
+/* دکمه تغییر وضعیت نوبار */
+.toggle-btn {
+  background-color: var(--bg-dark);
+  color: #fff;
+  border: none;
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.3rem;
+  margin-left: 10px;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  color: #0dcaf0;
+}
 
 /* اسکرول سفارشی */
 .custom-offcanvas::-webkit-scrollbar {
@@ -1051,3 +1629,21 @@ watch(
 
 
 </style>
+
+
+<!-- .sidebar {
+  position: fixed;
+  bottom: 20px; /* فاصله از پایین */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row; /* افقی */
+  gap: 8px;
+  background-color: var(--bg-dark-light);
+  padding: 8px 12px;
+  border-radius: 30px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  opacity: 0.5;
+  transition: all 0.3s ease;
+  z-index: 1050;
+} -->
