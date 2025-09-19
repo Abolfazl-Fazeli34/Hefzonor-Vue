@@ -4,7 +4,7 @@
 <div dir="rtl" class="container mx-auto">
 
 
-<div class="mb-4 mt-5 md:mt-10 border-b border-gray-200 dark:border-gray-700">
+<!-- <div class="mb-4 mt-5 md:mt-10 border-b border-gray-200 dark:border-gray-700">
     <ul class="flex flex-wrap justify-center -mb-px text-sm font-medium text-center" id="default-styled-tab" data-tabs-toggle="#default-styled-tab-content" data-tabs-active-classes="text-purple-600 hover:text-purple-600 dark:text-purple-500 dark:hover:text-purple-500 border-purple-600 dark:border-purple-500" data-tabs-inactive-classes="dark:border-transparent text-gray-500 hover:text-gray-600 dark:text-gray-400 border-gray-100 hover:border-gray-300 dark:border-gray-700 dark:hover:text-gray-300" role="tablist">
         <li class="me-2" role="presentation">
             <button class="inline-block p-4 border-b-2 rounded-t-lg" id="profile-styled-tab" data-tabs-target="#styled-profile" type="button" role="tab" aria-controls="profile" aria-selected="false">صفحه ای</button>
@@ -253,7 +253,103 @@
           This is some placeholder content the Clicking another tab will toggle the visibility of this one for the next. The tab JavaScript swaps classes to control the content visibility and styling.
         </div>
     </div>
-</div>
+</div> -->
+
+
+
+
+
+<!-- <div class="max-w-screen-lg mx-auto">
+  <form class="flex items-center mx-auto  mb-14">   
+      <label for="voice-search" class="sr-only">Search</label>
+      <div class="relative w-full flex items-center justify-stretch">
+          <label for="search-dropdown" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Your Email</label>
+          <button id="dropdown-button" data-dropdown-toggle="dropdown" class="shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-gray-100 border border-gray-300 rounded-s-lg hover:bg-gray-200 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600" type="button">All categories <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+            </svg>
+          </button>
+          <div id="dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-gray-700">
+              <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdown-button">
+              <li>
+                  <button type="button" class="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">ترجمه</button>
+              </li>
+              <li>
+                  <button type="button" class="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">قرآن</button>
+              </li>
+              </ul>
+          </div>
+          <input v-model="searchQuery" @keyup.enter="updateQuery" type="text" id="voice-search" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-l-lg focus:ring-blue-200 focus:border-blue-400 block w-full ps-10 p-2.5  dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="جستجوی کلمه, آیه, معنی ..." required />
+          <button type="button" class="absolute inset-y-0 end-0 flex items-center pe-3">
+              <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" >
+                  <use href="#microphone"></use>
+              </svg>
+          </button>
+          
+      </div>
+
+  </form>
+
+  <p id="resultsCount" class="text-accent my-4">
+    {{ startItem }} - {{ endItem }} از {{ count }} نتیجه جستجو
+  </p>
+
+  <ol class="relative border-s border-gray-200 dark:border-gray-700 mb-10">                  
+      <li v-for="verse in results" :key="verse.id" @click="goToVerse(verse)" class="mb-10 ms-4">
+          <div class="absolute w-3 h-3 bg-gray-200 rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700"></div>
+          <time class="mb-1 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">(آیه {{ verse.verse_number }} : {{ verse.surah }}) (صفحه {{ verse.PageNum }})</time>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white" v-html="verse.highlighted_AE2"></h3>
+          <p class="mb-4 text-base font-normal text-gray-500 dark:text-gray-400">Get access to over 20+ pages including a dashboard layout, charts, kanban board, calendar, and pre-order E-commerce & Marketing pages.</p>
+      </li>
+  </ol>
+
+  <nav aria-label="Page navigation example" style="display: flex;">
+    <ul class="inline-flex -space-x-px text-base h-10 mx-auto">
+      <li >
+        <a @click="changePage(1)" class="flex items-center justify-center px-3 h-10 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+          <svg class="w-3.5 h-3.5 me-2 rtl:rotate-180">
+            <use href="#chevron-double-left"></use>
+          </svg>
+        </a>
+      </li>
+      <li :class="{ disabled: currentPage === 1 }">
+        <a @click="changePage(currentPage-1)" class="flex items-center justify-center px-2 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+          <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180">
+            <use href="#chevron-left"></use>
+          </svg>
+        </a>
+      </li>
+
+      <li v-for="page in pagesToShow" :key="page">
+        <a @click="page !== '...' && changePage(page)" :class="{ 'active-btn': page === currentPage, 'dots-btn': page === '...' }" class="flex items-center justify-center px-3 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">{{ page }}</a>
+      </li>
+
+      <li :class="{ disabled: currentPage === totalPages }">
+        <a @click="changePage(currentPage+1)" class="flex items-center justify-center px-2 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+          <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180">
+            <use href="#chevron-right"></use>
+          </svg>
+        </a>
+      </li>
+      <li :class="{ disabled: currentPage === totalPages }">
+        <a @click="changePage(totalPages)" class="flex items-center justify-center px-3 h-10 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+          <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180">
+            <use href="#chevron-double-right"></use>
+          </svg>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="text-center text-accent small">
+    صفحه {{ currentPage }} از {{ totalPages }}
+  </div>
+</div> -->
+
+
+
+
+
+
 
 
 
@@ -821,6 +917,7 @@ const drawerOpen = ref(false)
 function toggleDrawer() {
   drawerOpen.value = !drawerOpen.value
 }
+
 
 const windowWidth = ref(window.innerWidth);
 

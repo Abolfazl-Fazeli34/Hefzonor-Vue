@@ -1,5 +1,5 @@
 <template>
-  <div class="px-8">
+  <div class="px-4 md:px-8">
     <nav class="bg-white border-gray-200 dark:bg-gray-900">
       <div class="max-w-screen flex flex-wrap items-center justify-between mx-auto py-4">
         <a href="#" class="flex items-center space-x-2 md:space-x-3 rtl:space-x-reverse">

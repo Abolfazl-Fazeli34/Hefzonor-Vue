@@ -8,6 +8,9 @@ module.exports = {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        QCF_BSML: ["QCF_BSML", "sans-serif"],
+      },
       fontSize: {
         'xs': ['0.75rem', { lineHeight: 'calc(1 / 0.75)' }],       // 12px
         'sm': ['0.875rem', { lineHeight: 'calc(1.25 / 0.875)' }],  // 14px

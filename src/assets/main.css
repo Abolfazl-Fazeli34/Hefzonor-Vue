@@ -6,6 +6,12 @@
 /* Flowbite */
 @import "flowbite";
 
+@layer base{
+    @font-face {
+        font-family: 'QCF_BSML';
+        src: url('/public/fonts/QCF_BSML.TTF');
+    }
+}
 
 @layer components{
     .drawer-transition {
@@ -29,5 +35,20 @@
     .slide-leave-to {
     transform: translateX(-100%);
     }
+
+    .custom-offcanvas::-webkit-scrollbar {
+    width: 10px;
+    }
+
+    .custom-offcanvas::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2); /* پیش‌فرض لایت */
+    border-radius: 4px;
+    }
+
+    /* حالت دارک */
+    .dark .custom-offcanvas::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3); 
+    }
+
 
 }

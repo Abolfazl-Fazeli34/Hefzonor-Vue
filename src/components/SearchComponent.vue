@@ -1,82 +1,128 @@
 <template>
-  <div class="container py-5 my-4 p-4 rounded page-content">
-    <!-- نوار جستجو -->
-    <div class="mb-4 position-relative">
-      <input type="text" v-model="searchQuery"
-       @keyup.enter="updateQuery"
-       class="form-control form-control-lg rounded-pill ps-5 shadow-lg search-input"
-       placeholder="جستجو">
-      <i class="fas fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-4 search-icon"
-        @click="updateQuery"></i>
+<div class="max-w-screen-lg mb-32 mt-12 md:mt-16 mx-auto">
+  <form class="flex items-center mx-auto mb-8 md:mb-10 px-3 md:px-0">   
+    <label for="voice-search" class="sr-only">Search</label>
+    <div class="relative w-full flex items-center justify-stretch">
+        <label for="search-dropdown" class="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Your Email</label>
+
+        <button 
+        data-dropdown-toggle="dropdown" 
+          class="shrink-0 w-auto md:w-32 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-gray-100 border border-gray-300 rounded-s-lg hover:bg-gray-200 focus:outline-none focus:ring-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:text-white dark:border-gray-600"
+          @click="showDropdown = !showDropdown"
+          type="button"
+        >
+          {{ selectedCategory }}
+          <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+          </svg>
+        </button>
+        <div id="dropdown" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-auto md:w-32 dark:bg-gray-700">
+            <ul v-if="true" class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdown-button">
+              <li v-for="cat in categories" :key="cat">
+                <button
+                  @click="selectCategory(cat)"
+                  class="inline-flex w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                >
+                  {{ cat }}
+                </button>
+              </li>
+            </ul>
+        </div>
+        <input @focus="showHistory = true" @blur="hideHistory" v-model="searchQuery" @keyup.enter="updateQuery" type="text" id="voice-search" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-l-lg block w-full ps-8 p-2.5  focus:bg-gray-50 focus:ring-blue-200 focus:border-blue-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:bg-gray-700 dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="جستجوی کلمه, آیه, معنی ..." required/>
+        <ul v-if="showHistory && searchHistory.length" class="absolute left-0 right-0 border border-gray-300 mt-1 rounded shadow z-10 max-h-60 overflow-y-auto bg-white">
+          <li
+            v-for="item in searchHistory"
+            :key="item"
+            @mousedown.prevent="selectHistory(item)" 
+            class="px-4 py-2 hover:bg-gray-400 cursor-pointer"
+          >
+            {{ item }}
+          </li>
+        </ul>
+        <button @click="startListening" type="button" class="absolute inset-y-0 end-0 flex items-center pe-3">
+            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" >
+                <use href="#microphone"></use>
+            </svg>
+        </button>
+        
+    </div>
+  </form>
+
+  <div class="px-4 md:px-0">
+    <div v-if="!loading" class="flex items-center justify-between">
+      <p id="resultsCount" class="text-accent my-4">
+        {{ startItem }} - {{ endItem }} از {{ count }}
+      </p>
+      <button  class="md:hidden text-xs text-blue-500" @click.prevent="toggleShowAll"> {{ showAll ? 'نمایش کوتاه' : 'نمایش کامل' }}</button>
     </div>
 
-    <!-- تعداد نتایج -->
-    <p id="resultsCount" class="text-accent mb-4">
-      {{ startItem }} - {{ endItem }} از {{ count }} نتیجه جستجو
-    </p>
 
-    <!-- نتایج جستجو -->
-    <ul id="resultsList" class="list-unstyled mb-5">
-      <li v-for="verse in results" :key="verse.id" @click="goToVerse(verse)" style="cursor: pointer;" class="result-card p-3 mb-3 rounded shadow-sm hover-scale">
-        <i class="fas fa-file-alt text-accent mt-1 me-2"></i>
-        <span class="verse-text" v-html="verse.highlighted_AE2"></span>
-        <span class="text-accent ms-2">
-          (آیه {{ verse.verse_number }} : {{ verse.surah }}) (صفحه {{ verse.PageNum }})
-        </span>
-      </li>
-    </ul>
+    <ol class="relative border-s border-gray-200 dark:border-gray-700 mb-10">                  
+        <li v-if="loading" v-for="i in 8" :key="i" class="mb-10 ms-4">
+          <div class="absolute w-3 h-3 bg-gray-200 rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700"></div>
+          <div class="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-3"></div>
+          <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[360px] mb-2.5"></div>
+          <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700 mb-2.5"></div>
+        </li>
 
-<!-- شماره صفحات -->
-<nav class="d-flex justify-content-center my-4" v-if="totalPages > 1">
-  <ul class="pagination custom-pagination shadow-lg rounded-pill px-2 py-1">
-    
-    <!-- اولین صفحه -->
-    <li class="page-item" :class="{ disabled: currentPage === 1 }">
-      <button class="page-link page-btn" @click="changePage(1)" title="اولین صفحه">
-        «
-      </button>
-    </li>
+        <li v-else-if="!loading && results.length === 0" class="text-gray-500 flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-gray-500 dark:text-gray-400"><use href="#magnifying-glass"></use></svg>
+          <span>نتیجه‌ای پیدا نشد.</span>
+        </li>
+        <li v-else v-for="verse in results" :key="verse.id"  class="mb-10 ms-4">
+            <div class="absolute w-3 h-3 bg-gray-200 rounded-full mt-1.5 -start-1.5 border border-white dark:border-gray-900 dark:bg-gray-700"></div>
+            <time class="mb-1 text-sm font-normal leading-none text-gray-400 dark:text-gray-500">آیه {{ verse.verse_number }} : {{ verse.surah }} / صفحه {{ verse.PageNum }}</time>
+            <h3  @click="goToVerse(verse)" :class="['text-lg text-gray-900 dark:text-white cursor-pointer', !verse.showAll ? 'truncate w-full block sm:overflow-visible sm:whitespace-normal' : 'block']" v-html="verse.highlighted_AE2"></h3>
+            <p :class="[ 'mb-4 text-base font-normal text-gray-500 dark:text-gray-400', !verse.showAll ? 'truncate w-full block sm:overflow-visible sm:whitespace-normal' : 'block']">Get access to over 20+ pages including a dashboard layout, charts, kanban board, calendar, and pre-order E-commerce & Marketing pages.</p>
+        </li>
+    </ol>
 
-    <!-- قبلی -->
-    <li class="page-item" :class="{ disabled: currentPage === 1 }">
-      <button class="page-link page-btn" @click="changePage(currentPage-1)" title="صفحه قبل">
-        ‹
-      </button>
-    </li>
+    <nav v-if="!loading" aria-label="Page navigation example" style="display: flex;">
+      <ul class="inline-flex -space-x-px text-base h-10 mx-auto">
+        <li >
+          <a @click="changePage(1)" class="flex items-center justify-center px-3 h-10 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+            <svg class="w-3.5 h-3.5 me-2 rtl:rotate-180">
+              <use href="#chevron-double-left"></use>
+            </svg>
+          </a>
+        </li>
+        <li :class="{ disabled: currentPage === 1 }">
+          <a @click="changePage(currentPage-1)" class="flex items-center justify-center px-2 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+            <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180">
+              <use href="#chevron-left"></use>
+            </svg>
+          </a>
+        </li>
 
-    <!-- شماره صفحات -->
-    <li v-for="page in pagesToShow" :key="page" class="page-item">
-      <button
-        class="page-link page-btn"
-        :class="{ 'active-btn': page === currentPage, 'dots-btn': page === '...' }"
-        @click="page !== '...' && changePage(page)"
-      >
-        {{ page }}
-      </button>
-    </li>
+        <li v-for="page in pagesToShow" :key="page">
+          <a @click="page !== '...' && changePage(page)" :class="{ 'active-btn': page === currentPage, 'dots-btn': page === '...' }" class="flex items-center justify-center px-3 h-10 cursor-pointer leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">{{ page }}</a>
+        </li>
 
-    <!-- بعدی -->
-    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-      <button class="page-link page-btn" @click="changePage(currentPage+1)" title="صفحه بعد">
-        ›
-      </button>
-    </li>
+        <li :class="{ disabled: currentPage === totalPages }">
+          <a @click="changePage(currentPage+1)" class="flex items-center justify-center px-2 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+            <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180">
+              <use href="#chevron-right"></use>
+            </svg>
+          </a>
+        </li>
+        <li :class="{ disabled: currentPage === totalPages }">
+          <a @click="changePage(totalPages)" class="flex items-center justify-center px-3 h-10 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">
+            <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180">
+              <use href="#chevron-double-right"></use>
+            </svg>
+          </a>
+        </li>
+      </ul>
+    </nav>
 
-    <!-- آخرین صفحه -->
-    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-      <button class="page-link page-btn" @click="changePage(totalPages)" title="آخرین صفحه">
-        »
-      </button>
-    </li>
-  </ul>
-</nav>
+    <div v-if="!loading" class="text-center text-gray-500 dark:text-gray-400 mt-2">
+      صفحه {{ currentPage }} از {{ totalPages }}
+    </div>
+  </div>
 
-<!-- نمایش وضعیت صفحه -->
-<div class="text-center text-accent small">
-  صفحه {{ currentPage }} از {{ totalPages }}
 </div>
 
-  </div>
+
 </template>
 
 <script setup>
@@ -95,6 +141,9 @@ const nextPage = ref(null)
 const prevPage = ref(null)
 const currentPage = ref(1)
 const itemsPerPage = 10
+const loading = ref(false)
+const searchHistory = ref([])
+const showHistory = ref(false)
 
 // --- debounce helper ---
 function debounce(fn, delay) {
@@ -105,37 +154,74 @@ function debounce(fn, delay) {
   }
 }
 
-// --- فراخوانی API ---
-const fetchResults = async (page = 1) => {
-  try {
-    const response = await axios.get('http://localhost:8000/api/v1/quran/verses/', {
-      params: { search: searchQuery.value, page: page }
-    })
+const hideHistory = () => {
+  setTimeout(() => {
+    showHistory.value = false
+  }, 500)
+}
 
-    // ساختار جدید API:
-    results.value = response.data.results.map(v => ({
+const categories = ['ترجمه', 'قرآن']
+const selectedCategory = ref('قرآن')  // پیش‌فرض قرآن
+
+const selectCategory = (cat) => {
+  selectedCategory.value = cat
+}
+
+const showAll = ref(false)
+
+// تابع برای toggle کردن همه متن ها
+const toggleShowAll = () => {
+  showAll.value = !showAll.value
+}
+
+// --- API ---
+const fetchResults = async (page = 1) => {
+  loading.value = true
+  try {
+    const res = await axios.get('http://localhost:8000/api/v1/quran/verses/', {
+      params: { search: searchQuery.value, page }
+    })
+    results.value = res.data.results.map(v => ({
       ...v,
       highlighted_A: v.highlighted_A || v.SearchA || v.SearchAE
     }))
-
-    count.value = response.data.count
-    nextPage.value = response.data.next
-    prevPage.value = response.data.previous
+    count.value = res.data.count
+    nextPage.value = res.data.next
+    prevPage.value = res.data.previous
     currentPage.value = page
-  } catch (error) {
-    console.error('Error fetching results:', error)
+  } catch (e) {
     results.value = []
     count.value = 0
-    nextPage.value = null
-    prevPage.value = null
+  } finally {
+    loading.value = false
   }
 }
 
-// --- بروزرسانی URL ---
+// --- URL & search ---
 const updateQuery = () => {
+  if (!searchQuery.value || !searchQuery.value.trim()) return
   router.push({ path: '/search', query: { query: searchQuery.value } })
   fetchResults(1)
 }
+
+const updateQuerys = () => {
+  if (!searchQuery.value || !searchQuery.value.trim()) return
+  if (!searchHistory.value.includes(searchQuery.value)) {
+    searchHistory.value.unshift(searchQuery.value)
+    if (searchHistory.value.length > 10) searchHistory.value.pop()
+    localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value))
+  }
+  fetchResults(1)
+}
+
+
+const selectHistory = (item) => {
+  searchQuery.value = item
+  updateQuery()
+}
+
+const debouncedSearch = debounce(updateQuery, 500)
+watch(searchQuery, debouncedSearch)
 
 const goToVerse = (verse) => {
   router.push({
@@ -145,16 +231,7 @@ const goToVerse = (verse) => {
   })
 }
 
-// --- watch با debounce ---
-const debouncedSearch = debounce(() => {
-  updateQuery()
-}, 500)  // ۵۰۰ میلی‌ثانیه بعد از توقف تایپ کاربر
-
-watch(searchQuery, (newVal, oldVal) => {
-  debouncedSearch()
-})
-
-// --- محاسبات pagination ---
+// --- pagination ---
 const startItem = computed(() => (results.value.length === 0 ? 0 : (currentPage.value - 1) * itemsPerPage + 1))
 const endItem = computed(() => Math.min(currentPage.value * itemsPerPage, count.value))
 const totalPages = computed(() => Math.ceil(count.value / itemsPerPage))
@@ -164,7 +241,6 @@ const changePage = (page) => {
   fetchResults(page)
 }
 
-// محاسبه صفحات برای pagination
 const pagesToShow = computed(() => {
   const pages = []
   if (totalPages.value <= 7) {
@@ -177,18 +253,37 @@ const pagesToShow = computed(() => {
   return pages
 })
 
-// بارگذاری اولیه
+// --- Speech Recognition ---
+let recognition
+const startListening = () => {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert('مرورگر شما از Speech Recognition پشتیبانی نمی‌کند.')
+    return
+  }
+  recognition = new webkitSpeechRecognition()
+  recognition.lang = 'fa-IR'
+  recognition.interimResults = false
+  recognition.maxAlternatives = 1
+  recognition.onresult = (event) => {
+    searchQuery.value = event.results[0][0].transcript
+    updateQuery()
+  }
+  recognition.start()
+}
+
+// --- mounted ---
 onMounted(() => {
   if (searchQuery.value) fetchResults(1)
+  const saved = localStorage.getItem('searchHistory')
+  if (saved) searchHistory.value = JSON.parse(saved)
 })
 
-// همگام سازی URL
+// --- watch URL ---
 watch(() => route.query.query, (newQuery) => {
   searchQuery.value = newQuery || ''
   fetchResults(1)
 })
 </script>
-
 
 <style >
 /* :root {

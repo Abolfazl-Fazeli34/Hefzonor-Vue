@@ -69,7 +69,7 @@
             <li v-for="group in groupedPairs" :key="group[0].surah_id" class="pb-3 sm:py-4 flex items-center justify-between">
               <div class="flex items-center flex-row-reverse gap-3">
                 <div class="flex-1 min-w-0">
-                  <p class="text-lg md:text-3xl font-medium text-gray-600 truncate dark:text-white QCF_BSML">
+                  <p class="text-lg md:text-3xl font-medium text-gray-600 truncate dark:text-white font-QCF_BSML">
                     {{ group[0].code }}{{ group[1] ? group[1].code : '' }}
                   </p>
                 </div>
@@ -242,7 +242,7 @@ onMounted(() => {
 </script>
 
 
-<style scoped>
+<!-- <style scoped>
 @font-face {
   font-family: 'QCF_BSML';
   src: url('/public/fonts/QCF_BSML.TTF');
@@ -259,4 +259,4 @@ onMounted(() => {
   border-radius: 4px;
 } 
 
-</style>
+</style> -->

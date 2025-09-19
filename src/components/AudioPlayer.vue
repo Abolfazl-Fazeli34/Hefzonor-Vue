@@ -1,162 +1,169 @@
 <template>
-  <div class="audio-player" :class="{ active: currentSurah }">
-    <!-- نوار پیشرفت -->
-    <div class="progress-container" @click="seek">
-      <div class="progress-bar" :style="{ width: progress + '%' }"></div>
+<div :class="{ active: currentSurah }" class="fixed bottom-0 left-0 z-30 grid w-full h-20 grid-cols-1 px-8 bg-white border-t border-gray-200 md:grid-cols-3 dark:bg-gray-800 dark:border-gray-600">
+    <div class="items-center justify-center hidden me-auto md:flex">
+        <img class="h-10 me-3 rounded-full" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0Hbuj9a3gBYl4nYNe1XpZZt4iXeegdo52Hu_NL1aULupBRbIrrDI8jIoIQOr127YKOyu6sA&s" alt="Video preview">
+        <span v-if="settings.selectedQari" class="text-sm md:text-xl/2 text-gray-500 dark:text-gray-400">قاری {{ settings.selectedQari.name }}</span>
+        <div v-else class="text-sm md:text-xl/2 text-gray-500 dark:text-gray-400">
+          <div class="h-1.5 bg-gray-200 rounded-full dark:bg-gray-700 w-24 mb-2"></div>
+          <div class="h-1.5 bg-gray-200 rounded-full dark:bg-gray-700 w-32"></div>
+        </div>
     </div>
-
-    <!-- زمان فعلی -->
-    <span class="time-label">{{ formatTime(currentTime) }}</span>
-
-    <!-- کنترل‌ها -->
-    <div class="controls">
-
-      <!-- ضربدر -->
-      <button  
-        style="font-size: 1.5rem;"
-        v-if="currentSurah" 
-        @click="clearCurrentSurah" 
-        class="icon-button"
-      >
-        ✕
-      </button>
-
-      <!-- تنظیمات -->
-      <div class="menu-group">
-        <button data-modal-target="crud-modal" data-modal-toggle="crud-modal" class="icon-button">
-          <i class="fas fa-ellipsis-h"></i>
-        </button>
-
-        <div class="volume-tooltip volume-tooltip-width-for-panel-setting" v-if="showMenu">
-          <div class="translation-box border-green" style="margin-bottom: 0;">
-            <h6 class="panel-title text-yellow-400 font-semibold mb-2">تنظیمات صوت</h6>
-
-            <!-- انتخاب قاری -->
-            <div class="form-group flex flex-col gap-1 w-full">
-              <label class="form-label">انتخاب قاری:</label>
-              <select v-model="settings.selectedQari" class="form-select flex-1">
-                <option v-for="q in settings.qari" :key="q.id" :value="q">
-                  {{ q.name }} ({{ q.type }})<span v-if="q.language"> ({{q.language}})</span>
-                </option>
-              </select>
-            </div>
-            <hr>
-
-            <!-- محدوده پخش -->
-            <div class="flex flex-col gap-2">
-              <label class="flex items-center gap-2">
-                <input type="checkbox" v-model="settings.rangeEnabled" class="accent-yellow-400" />
-                محدوده پخش
-              </label>
-              <div v-if="settings.rangeEnabled" class="flex flex-col gap-2">
-                <!-- از -->
-                <div class="display flex items-center gap-2">
-                  <label class="w-12">از:</label>
-                  <select v-model="settings.fromIndex" class="form-select flex-1 custom-offcanvas">
-                    <option v-for="(f, index) in settings.from" :key="index" :value="index">
-                      {{ f.surahName }} ({{ f.aya }})
-                    </option>
-                  </select>
-                </div>
-
-                <!-- تا -->
-                <div class="display flex items-center gap-2">
-                  <label class="w-12">تا:</label>
-                  <select v-model="settings.toIndex" class="form-select flex-1 custom-offcanvas">
-                    <option 
-                      v-for="(t, index) in filteredToOptions" 
-                      :key="index" 
-                      :value="index + settings.fromIndex">
-                      {{ t.surahName }} ({{ t.aya }})
-                    </option>
-                  </select>
-                </div>
-
-                <div class="display flex flex-col gap-1">
-                  <label style="width: 150px;">تکرار محدوده:</label>
-                  <input type="number" min="1" v-model="settings.repeatRange" class="form-input" />
-                </div>
-
-                <div class="display flex flex-col gap-1">
-                  <label style="width: 150px;">تکرار آیه:</label>
-                  <input type="number" min="1" v-model="settings.repeatAya" class="form-input" />
-                </div>
+    <div class="flex items-center w-full">
+        <div class="w-full">
+            <div class="flex items-center justify-between mb-1">
+              <button data-modal-target="crud-modal" data-modal-toggle="crud-modal" data-tooltip-target="tooltip-settings" type="button" class="md:hidden p-2.5 group rounded-full hover:bg-gray-100  dark:hover:bg-gray-600">
+                  <svg class="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+                    <use href="#cog-6-tooth"></use>
+                  </svg>
+                  <span class="sr-only">Settings</span>
+              </button>
+              <div id="tooltip-settings" role="tooltip"class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+                  تنظمات
+                  <div class="tooltip-arrow" data-popper-arrow></div>
               </div>
+              <div class="flex items-center justify-center mx-auto">
+                  <button data-tooltip-target="tooltip-shuffle" type="button" class="p-2.5 group rounded-full hover:bg-gray-100 me-1 dark:hover:bg-gray-600">
+                      <svg class=" w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" >
+                        <use href="#arrow-path-rounded-square"></use>
+                      </svg>
+                      <span class="sr-only">Shuffle video</span>
+                  </button>
+                  <div id="tooltip-shuffle" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+                      به هم زدن صوت
+                      <div class="tooltip-arrow" data-popper-arrow></div>
+                  </div>
+                  <button @click="rewind" data-tooltip-target="tooltip-previous" type="button" class="p-2.5 group rounded-full hover:bg-gray-100  dark:hover:bg-gray-600">
+                      <svg class="rtl:rotate-180 w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 12 16">
+                        <use href="#arrow-right-circle"></use>
+                      </svg>
+                      <span class="sr-only">Previous video</span>
+                  </button>
+                  <div id="tooltip-previous" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+                      صوت قبلی
+                      <div class="tooltip-arrow" data-popper-arrow></div>
+                  </div>
+                  <button @click="togglePlay" data-tooltip-target="tooltip-pause" type="button" class="inline-flex items-center justify-center p-2.5 mx-2 font-medium bg-blue-500 rounded-full hover:bg-blue-6700 group focus:ring-4 focus:ring-blue-300 focus:outline-none dark:focus:ring-blue-800">
+                      <svg class="w-3 h-3 text-white">
+                        <use :href="isPlaying ? '#pause': '#play'"></use>
+                      </svg>
+                      <span class="sr-only">Pause video</span>
+                  </button>
+                  <div id="tooltip-pause" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+                      مکث صوت
+                      <div class="tooltip-arrow" data-popper-arrow></div>
+                  </div>
+                  <button @click="forward" data-tooltip-target="tooltip-next" type="button" class="p-2.5 group rounded-full hover:bg-gray-100 me-1  dark:hover:bg-gray-600">
+                      <svg class="rtl:rotate-180 w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 12 16">
+                          <use href="#arrow-left-circle"></use>
+                      </svg>
+                      <span class="sr-only">Next video</span>
+                  </button>
+                  <div id="tooltip-next" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+                      صوت بعدی
+                      <div class="tooltip-arrow" data-popper-arrow></div>
+                  </div>
+                  <button data-tooltip-target="tooltip-restart" type="button" class="p-2.5 group rounded-full hover:bg-gray-100 me-1  dark:hover:bg-gray-600">
+                      <svg class="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 20">
+                          <use href="#arrow-path"></use>
+                      </svg>
+                      <span class="sr-only">Restart video</span>
+                  </button>
+                  <div id="tooltip-restart" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+                      راه اندازی دوباره
+                      <div class="tooltip-arrow" data-popper-arrow></div>
+                  </div>
+              </div>
+              <button data-tooltip-target="tooltip-playlist"  type="button" @click="toggleDrawer" class="md:hidden  p-2.5 group rounded-full hover:bg-gray-100  dark:hover:bg-gray-600">
+                <svg class="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 16">
+                    <use href="#list-bullet"></use>
+                </svg>
+                <span class="sr-only">View playlist</span>
+              </button>
+              <div id="tooltip-playlist" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+                  لیست قران
+                  <div class="tooltip-arrow" data-popper-arrow></div>
+              </div>             
             </div>
-            <hr>
-
-            <!-- سرعت پخش -->
-            <div class="form-group flex items-center gap-2 w-full">
-              <label class="w-28">سرعت پخش:</label>
-              <select v-model="settings.speed" class="form-select flex-1 custom-offcanvas">
-                <option v-for="(s, index) in settings.speedOptions" :key="index" :value="s.value">
-                  {{ s.label }}
-                </option>
-              </select>
+            
+            <div class="flex items-center justify-between space-x-2 rtl:space-x-reverse">
+                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ formatTime(currentTime) }}</span>
+                <div class="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700" @click="seek">
+                    <div class="bg-blue-500 h-1.5 rounded-full" :style="{ width: progress + '%' }"></div>
+                </div>
+                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ formatTime(totalDuration) }}</span>
             </div>
-
-            <hr>
-
-            <!-- وقفه بعد از قرائت -->
-            <div class="form-group flex items-center gap-2 w-full">
-              <label class="flex items-center gap-2 w-28">
-                <input type="checkbox" v-model="settings.pauseAfter" class="accent-yellow-400" />
-                وقفه بعد از قرائت
-              </label>
-              <input
-                v-if="settings.pauseAfter"
-                v-model="settings.PauseAfterRecitation" type="number" min="1" class="form-input" placeholder="ثانیه"
-              />
-            </div>
-          </div>
         </div>
-      </div>
-
-      <!-- کنترل پخش -->
-      <button @click="rewind" class="icon-button" title="۱۰ ثانیه عقب">
-        <i class="fas fa-rotate-left"></i>
-      </button>
-
-      <button @click="togglePlay" class="play-button">
-        <i :class="isPlaying ? 'fas fa-pause' : 'fas fa-play'"></i>
-      </button>
-
-      <button @click="forward" class="icon-button" title="۱۰ ثانیه جلو">
-        <i class="fas fa-rotate-right"></i>
-      </button>
-
-      <!-- کنترل صدا -->
-      <div class="volume-group">
-        <button @click="toggleVolumeTooltip" class="icon-button">
-          <i class="fas fa-volume-up"></i>
-        </button>
-        <div class="volume-tooltip" v-if="showVolume">
-          <div class="translation-box border-green" style="padding: 3px 2px 2px 2px ; margin-bottom: 0;">
-            <input type="range" min="0" max="1" step="0.01" v-model="volume" />
-          </div>
-        </div>
-      </div>
     </div>
-
-    <!-- زمان کل -->
-    <span class="time-label">{{ formatTime(totalDuration) }}</span>
-
-    <!-- پلیر -->
+    <div class="items-center justify-center hidden ms-auto md:flex">
+        <button data-tooltip-target="tooltip-playlist"  type="button" @click="toggleDrawer" class="p-2.5 group rounded-full hover:bg-gray-100 me-1  dark:hover:bg-gray-600">
+            <svg class="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+                <use href="#list-bullet"></use>
+            </svg>
+            <span class="sr-only">View playlist</span>
+        </button>
+        <div id="tooltip-playlist" role="tooltip" class="absolute z-30 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+            لیست قران
+            <div class="tooltip-arrow" data-popper-arrow></div>
+        </div>
+        <button data-tooltip-target="tooltip-expand" type="button" class="p-2.5 group rounded-full hover:bg-gray-100 me-1  dark:hover:bg-gray-600">
+            <svg class="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+                <use href="#arrows-pointing-out"></use>
+            </svg>
+            <span class="sr-only">Expand</span>
+        </button>
+        <div id="tooltip-expand" role="tooltip" class="absolute z-30 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+            تمام صفحه
+            <div class="tooltip-arrow" data-popper-arrow></div>
+        </div>
+        <button @click="toggleVolumeTooltip" id="dropdownTopButton" data-dropdown-toggle="dropdownTop" data-dropdown-placement="top" data-tooltip-target="tooltip-volume" type="button" class="p-2.5 group rounded-full hover:bg-gray-100  dark:hover:bg-gray-600">
+            <svg class="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+              <use href="#speaker-wave"></use>
+            </svg>
+            <span class="sr-only">Adjust volume</span>
+        </button>
+        <div id="dropdownTop" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-gray-700">
+          <div class="p-1 mb-0">
+            <input type="range" min="0" max="1" step="0.01" v-model="volume" class="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer range-sm dark:bg-gray-700"/>
+          </div>
+        </div>
+        <div id="tooltip-volume" role="tooltip" class="absolute z-30 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+            تنظیم صدا
+            <div class="tooltip-arrow" data-popper-arrow></div>
+        </div>
+        <button data-modal-target="crud-modal" data-modal-toggle="crud-modal" data-tooltip-target="tooltip-settings" type="button" class="p-2.5 group rounded-full hover:bg-gray-100 me-1 dark:hover:bg-gray-600">
+            <svg class="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 22 20" stroke-width="2" stroke="currentColor">
+              <use href="#cog-6-tooth"></use>
+            </svg>
+            <span class="sr-only">Settings</span>
+        </button>
+        <div id="tooltip-settings" role="tooltip"class="absolute z-30 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+            تنظمیات
+            <div class="tooltip-arrow" data-popper-arrow></div>
+        </div>
+        <button @click="clearCurrentSurah"  data-tooltip-target="tooltip-mark" type="button" class="p-2.5 group rounded-full hover:bg-gray-100 me-1 dark:hover:bg-gray-600">
+            <svg class="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 22 20" stroke-width="2" stroke="currentColor">
+              <use href="#x-mark"></use>
+            </svg>
+            <span class="sr-only">mark</span>
+        </button>
+        <div id="tooltip-mark" role="tooltip"class="absolute z-30 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-xs opacity-0 tooltip dark:bg-gray-700">
+            بستن
+            <div class="tooltip-arrow" data-popper-arrow></div>
+        </div>
+    </div>
     <audio
       ref="audioRef"
       @timeupdate="updateTime"
       @loadedmetadata="setDuration"
     ></audio>
-  </div>
+</div>
 
-
-
-  <div id="crud-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full transition-all">
+<div id="crud-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full transition-all">
     <div class="relative p-4 w-full max-w-md max-h-full">
         <!-- Modal content -->
         <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
             <!-- Modal header -->
-            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
+            <div class="flex items-center justify-between px-4 py-3 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                     تنظیمات صوت
                 </h3>
@@ -221,7 +228,7 @@
                     </div>
                 </div>
                 <button type="submit" class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                    save
+                    ذخیره
                 </button>
             </form>
         </div>
