@@ -1,17 +1,17 @@
 <template>
-
+ <!-- class="bg-white text-black dark:bg-gray-900 dark:text-white" -->
   <div dir="rtl" lang="fa">
+
     <!-- Header -->
     <HeaderComponent />
-
-    <!-- Info Bar -->
-    <InfoBar @toggle-menu="toggleMenu" />
 
     <!-- Side Menu -->
     <SideMenu />
 
     <!-- Side Settings -->
     <SideSettings />
+
+    <!-- <GoToButton/> -->
     
     <!-- Main Content via router -->
     <!-- <router-view :id_sure="id_sure" :filtered-items="filteredItems" :selectedWord="selectedWord" @send-audio-data="handleAudioData" @wordClicked="handleWordClick" /> -->
@@ -41,7 +41,7 @@ import AudioPlayer from './components/AudioPlayer.vue'
 import TabbedContent from './components/TabbedContent.vue'
 import QuranDetails from './components/QuranDetails.vue'
 import SideSettings from './components/SideSettings.vue'
-
+import GoToButton from './components/GoToButton.vue'
 
 export default {
   name: 'App',
@@ -52,7 +52,8 @@ export default {
     AudioPlayer,
     TabbedContent,
     QuranDetails,
-    SideSettings
+    SideSettings,
+    GoToButton
   },
   data() {
     return {
@@ -91,8 +92,8 @@ export default {
 
 body {
   font-family: 'Vazirmatn', sans-serif;
-  background-color: var(--bg-darker);
   color: var(--text-light);
+  /* @apply dark:bg-gray-900 */
 }
 
 

@@ -7,42 +7,12 @@ export default createStore({
     currentAya: null,    // شماره آیه جاری
     startAyaNumber: null,
     isOpen: false,
-    ayahs: [
-    //   {
-    //   id: 1,
-    //   verse_number: 1,
-    //   text: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-    //   translation: "به نام خداوند بخشنده مهربان"
-    // },
-    // {
-    //   id: 2,
-    //   verse_number: 2,
-    //   text: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
-    //   translation: "ستایش مخصوص خداوند، پروردگار جهانیان است"
-    // },
-    // {
-    //   id: 3,
-    //   verse_number: 3,
-    //   text: "الرَّحْمَٰنِ الرَّحِيمِ",
-    //   translation: "بخشنده مهربان"
-    // },
-    // {
-    //   id: 4,
-    //   verse_number: 4,
-    //   text: "مَالِكِ يَوْمِ الدِّينِ",
-    //   translation: "مالک روز جزا"
-    // },
-    // {
-    //   id: 5,
-    //   verse_number: 5,
-    //   text: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
-    //   translation: "تنها تو را می‌پرستیم و تنها از تو یاری می‌جوییم"
-    // },
-    ],
+    ayahs: [],
     settings: {
       showTranslation: true,
       fontSize: '16px'
-    }
+    },
+    theme: localStorage.getItem('theme') || 'light'
   },
   mutations: {
     setCurrentSurah(state, surah) {
@@ -54,14 +24,21 @@ export default createStore({
     setStartAyaNumber(state, number) { 
       state.startAyaNumber = number;
     },
-    setIsOpen(state, payload) {
-      state.isOpen = payload
+    toggleIsOpen(state) {
+      state.isOpen = !state.isOpen;
+    },
+    setIsOpen(state, val) {  
+      state.isOpen = val;
     },
     setAyahs(state, payload) {
       state.ayahs = payload
     },
     setSettings(state, payload) {
       state.settings = { ...state.settings, ...payload }
+    },
+    setTheme(state, theme) { 
+      state.theme = theme 
+      localStorage.setItem('theme', theme)
     }
   },
   actions: {
@@ -73,11 +50,13 @@ export default createStore({
     },
     updateStartAyaNumber({ commit }, number) {  // ← اضافه شد
       commit('setStartAyaNumber', number);
-    }
+    },
+    updateTheme({ commit }, theme) { commit('setTheme', theme) }
   },
   getters: {
     getCurrentSurah: (state) => state.currentSurah,
     getCurrentAya: (state) => state.currentAya,
-    getStartAyaNumber: (state) => state.startAyaNumber
+    getStartAyaNumber: (state) => state.startAyaNumber,
+    getTheme: (state) => state.theme
   },
 });

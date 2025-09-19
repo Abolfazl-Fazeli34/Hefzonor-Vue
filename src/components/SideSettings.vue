@@ -53,9 +53,13 @@ const store = useStore()
 const searchQuery = ref('')
 
 // گرفتن مقادیر از store
-const isOpen = computed(() => store.state.isOpen)
-const ayahs = computed(() => store.state.ayahs)
-const settings = computed(() => store.state.settings)
+const isOpen = ref(null)
+const ayahs = ref(null)
+const settings = ref(null)
+
+// const isOpen = computed(() => store.state.isOpen)
+// const ayahs = computed(() => store.state.ayahs)
+// const settings = computed(() => store.state.settings)
 
 // فیلتر آیه‌ها
 const filteredAyahs = computed(() => {

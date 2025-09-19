@@ -11,43 +11,71 @@
     </div>
 
     <!-- تعداد نتایج -->
-    <p id="resultsCount" class="text-accent mb-4">{{ startItem }} - {{ endItem }} از {{ count }} نتیجه جستجو</p>
+    <p id="resultsCount" class="text-accent mb-4">
+      {{ startItem }} - {{ endItem }} از {{ count }} نتیجه جستجو
+    </p>
 
     <!-- نتایج جستجو -->
     <ul id="resultsList" class="list-unstyled mb-5">
-      <li v-for="verse in results" :key="verse.id" class="result-card p-3 mb-3 rounded shadow-sm hover-scale">
+      <li v-for="verse in results" :key="verse.id" @click="goToVerse(verse)" style="cursor: pointer;" class="result-card p-3 mb-3 rounded shadow-sm hover-scale">
         <i class="fas fa-file-alt text-accent mt-1 me-2"></i>
-        <span class="verse-text" v-html="verse.highlighted_text"></span>
+        <span class="verse-text" v-html="verse.highlighted_AE2"></span>
         <span class="text-accent ms-2">
-          (آیه {{ verse.surah }} : {{ verse.verse_number }}) (صفحه {{ verse.page_number }})
+          (آیه {{ verse.verse_number }} : {{ verse.surah }}) (صفحه {{ verse.PageNum }})
         </span>
       </li>
-
-
     </ul>
 
+<!-- شماره صفحات -->
+<nav class="d-flex justify-content-center my-4" v-if="totalPages > 1">
+  <ul class="pagination custom-pagination shadow-lg rounded-pill px-2 py-1">
+    
+    <!-- اولین صفحه -->
+    <li class="page-item" :class="{ disabled: currentPage === 1 }">
+      <button class="page-link page-btn" @click="changePage(1)" title="اولین صفحه">
+        «
+      </button>
+    </li>
+
+    <!-- قبلی -->
+    <li class="page-item" :class="{ disabled: currentPage === 1 }">
+      <button class="page-link page-btn" @click="changePage(currentPage-1)" title="صفحه قبل">
+        ‹
+      </button>
+    </li>
+
     <!-- شماره صفحات -->
-    <nav class="d-flex justify-content-center mb-3" v-if="totalPages > 1">
-      <ul class="pagination">
-        <li class="page-item" :class="{ disabled: currentPage === 1 }">
-          <button class="page-link page-btn" @click="changePage(currentPage-1)">&lt;</button>
-        </li>
+    <li v-for="page in pagesToShow" :key="page" class="page-item">
+      <button
+        class="page-link page-btn"
+        :class="{ 'active-btn': page === currentPage, 'dots-btn': page === '...' }"
+        @click="page !== '...' && changePage(page)"
+      >
+        {{ page }}
+      </button>
+    </li>
 
-        <li class="page-item" v-for="page in pagesToShow" :key="page" :class="{ active: page === currentPage || page === '...' }">
-          <button
-            class="page-link page-btn"
-            :class="{ 'active-btn': page === currentPage, 'dots-btn': page === '...' }"
-            @click="page !== '...' && changePage(page)"
-          >
-            {{ page }}
-          </button>
-        </li>
+    <!-- بعدی -->
+    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+      <button class="page-link page-btn" @click="changePage(currentPage+1)" title="صفحه بعد">
+        ›
+      </button>
+    </li>
 
-        <li class="page-item" :class="{ disabled: !nextPage }">
-          <button class="page-link page-btn" @click="changePage(currentPage+1)">&gt;</button>
-        </li>
-      </ul>
-    </nav>
+    <!-- آخرین صفحه -->
+    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+      <button class="page-link page-btn" @click="changePage(totalPages)" title="آخرین صفحه">
+        »
+      </button>
+    </li>
+  </ul>
+</nav>
+
+<!-- نمایش وضعیت صفحه -->
+<div class="text-center text-accent small">
+  صفحه {{ currentPage }} از {{ totalPages }}
+</div>
+
   </div>
 </template>
 
@@ -83,7 +111,13 @@ const fetchResults = async (page = 1) => {
     const response = await axios.get('http://localhost:8000/api/v1/quran/verses/', {
       params: { search: searchQuery.value, page: page }
     })
-    results.value = response.data.results
+
+    // ساختار جدید API:
+    results.value = response.data.results.map(v => ({
+      ...v,
+      highlighted_A: v.highlighted_A || v.SearchA || v.SearchAE
+    }))
+
     count.value = response.data.count
     nextPage.value = response.data.next
     prevPage.value = response.data.previous
@@ -103,6 +137,14 @@ const updateQuery = () => {
   fetchResults(1)
 }
 
+const goToVerse = (verse) => {
+  router.push({
+    name: 'quran-surah',
+    params: { surahno: verse.surah },
+    query: { aya: verse.verse_number }
+  })
+}
+
 // --- watch با debounce ---
 const debouncedSearch = debounce(() => {
   updateQuery()
@@ -112,7 +154,7 @@ watch(searchQuery, (newVal, oldVal) => {
   debouncedSearch()
 })
 
-// --- سایر محاسبات صفحه‌بندی ---
+// --- محاسبات pagination ---
 const startItem = computed(() => (results.value.length === 0 ? 0 : (currentPage.value - 1) * itemsPerPage + 1))
 const endItem = computed(() => Math.min(currentPage.value * itemsPerPage, count.value))
 const totalPages = computed(() => Math.ceil(count.value / itemsPerPage))
@@ -149,7 +191,7 @@ watch(() => route.query.query, (newQuery) => {
 
 
 <style >
-:root {
+/* :root {
   --bg-dark: #1a1a1a;
   --bg-dark-light: #242424;
   --text-light: #f0f0f0;
@@ -157,7 +199,7 @@ watch(() => route.query.query, (newQuery) => {
   --text-accent: #00bcd4;
   --border-color: #333333;
   --accent: #00bcd4;
-}
+} */
 
 .highlight{
   color: var(--accent);
@@ -216,9 +258,20 @@ watch(() => route.query.query, (newQuery) => {
   margin: 0 2px;
   transition: all 0.2s ease;
 }
+/* دکمه های disabled */
+.page-item.disabled .page-link {
+  background-color: var(--bg-dark-light) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border-color);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .page-btn:hover { background: var(--accent); color: #fff; }
 .active-btn { background: var(--accent); color: #4e4e4eff; border: none; }
 .dots-btn { cursor: default; background: transparent; border: none; color: var(--text-muted); }
 
 .text-accent { color: #7c7c7cff; }
+
+
 </style>

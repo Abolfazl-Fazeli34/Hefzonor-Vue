@@ -1,14 +1,13 @@
 <template>
   <!-- کنترلر بالای کادر اصلی -->
-  <div class="text-light p-3 rounded mt-4 d-flex flex-wrap gap-3 align-items-center justify-content-between" style="max-width: 310px;margin: 0 auto;background-color: var(--bg-dark);" dir="rtl">
+  <div class="text-light p-3 rounded mt-4 flex flex-wrap gap-3 items-center justify-between max-w-[310px] mx-auto bg-[#1a1a1a]" dir="rtl">
     <!-- انتخاب سوره -->
-    <div class="form-group mb-0 flex-fill">
-      <label for="surahSelect" class="form-label">انتخاب سوره:</label>
+    <div class="flex-1 mb-0">
+      <label for="surahSelect" class="block mb-1">انتخاب سوره:</label>
       <select id="surahSelect"
               v-model="selectedSurah"
               @change="generateAyahs"
-              class="form-select text-light border border-secondary custom-offcanvas"
-              style="background-color: var(--bg-dark);width: 135px;">
+              class="w-[135px] text-white border border-gray-600 rounded bg-[#1a1a1a] p-1">
         <option value="" disabled>انتخاب کنید</option>
         <option v-for="surah in surahs" :key="surah.id" :value="surah.id">
           {{ surah.name }} ({{ surah.id }})
@@ -17,12 +16,11 @@
     </div>
 
     <!-- انتخاب آیه -->
-    <div class="form-group mb-0 flex-fill">
-      <label for="ayahSelect" class="form-label">انتخاب آیه:</label>
+    <div class="flex-1 mb-0">
+      <label for="ayahSelect" class="block mb-1">انتخاب آیه:</label>
       <select id="ayahSelect"
               v-model="selectedAyah"
-              class="form-select text-light border border-secondary custom-offcanvas" 
-              style="background-color: var(--bg-dark);">
+              class="w-full text-white border border-gray-600 rounded bg-[#1a1a1a] p-1">
         <option value="" disabled>انتخاب کنید</option>
         <option v-for="ayah in ayahs" :key="ayah.id" :value="ayah.id">
           {{ ayah.name }}
@@ -31,42 +29,41 @@
     </div>
   </div>
 
-  <div class="page-content container-fluid mt-4  p-4 rounded" style="margin-bottom: 100px;">
-    <div class="d-flex h-100" style="min-height: 1400px;">
+  <!-- محتوا -->
+  <div class="page-content container mx-auto mt-4 p-4 rounded-b-[2rem] mb-24 bg-[#1a1a1a] text-white">
+    <div class="flex h-full min-h-[1400px]">
+      
       <!-- ستون کناری -->
-      <div class="d-flex flex-column me-3" style="width: 25%;">
+      <div class="flex flex-col mr-3 w-1/4">
         <!-- کادر پایین (نمایش آیه و اطلاعات) -->
-        <div class="section-box flex-fill p-3" style="direction: rtl;">
-          <div class="mb-3 border rounded p-3 shadow-sm verse-box" style="position: fixed;width: 365px;">
-            <h5 class="mb-2 text-green fw-bold">۱. آیه 1 سوره نساء</h5>
-
-            <div class="row">
-              <div class="col-md-6 mb-2"><strong>سوره:</strong> سوره نساء (۴)</div>
-              <div class="col-md-6 mb-2"><strong>جزء:</strong> ۴</div>
-              <div class="col-md-6 mb-2"><strong>محل نزول:</strong> مدینه</div>
-              <div class="col-md-6 mb-2"><strong>نوع قرائت:</strong> ترتیل</div>
+        <div class="section-box flex-1 p-3" dir="rtl">
+          <div class="verse-box border border-gray-700 p-3 rounded shadow-md fixed w-[365px]">
+            <h5 class="mb-2 text-green-500 font-bold">۱. آیه 1 سوره نساء</h5>
+            <div class="grid grid-cols-2 gap-2 mb-3 text-sm">
+              <div><strong>سوره:</strong> سوره نساء (۴)</div>
+              <div><strong>جزء:</strong> ۴</div>
+              <div><strong>محل نزول:</strong> مدینه</div>
+              <div><strong>نوع قرائت:</strong> ترتیل</div>
             </div>
 
             <div class="mt-3">
-              <h6 class="text-accent">متن ترتیل</h6>
-              <p class="fs-5" style="line-height: 2;">
+              <h6 class="text-cyan-400">متن ترتیل</h6>
+              <p class="text-lg leading-loose">
                 يَا أَيُّهَا النَّاسُ اتَّقُوا رَبَّكُمُ الَّذِي خَلَقَكُمْ مِّن نَّفْسٍ وَاحِدَةٍ ...
               </p>
             </div>
 
             <div class="mt-3">
-              <h6 style="color: var(--text-accent);">ترجمه (مکارم شیرازی)</h6>
-              <p>
-                ای مردم! از (مخالفت) پروردگارتان بپرهیزید؛ همان کسی که همه شما را از یک انسان آفرید...
-              </p>
+              <h6 class="text-cyan-400">ترجمه (مکارم شیرازی)</h6>
+              <p>ای مردم! از (مخالفت) پروردگارتان بپرهیزید؛ همان کسی که همه شما را از یک انسان آفرید...</p>
             </div>
 
             <div class="mt-3">
-              <h6 class="text-accent">فایل‌های صوتی</h6>
-              <audio controls class="w-100 mb-2">
+              <h6 class="text-cyan-400">فایل‌های صوتی</h6>
+              <audio controls class="w-full mb-2">
                 <source src="https://example.com/audio1.mp3" type="audio/mp3">
               </audio>
-              <audio controls class="w-100">
+              <audio controls class="w-full">
                 <source src="https://example.com/audio2.mp3" type="audio/mp3">
               </audio>
             </div>
@@ -75,155 +72,122 @@
       </div>
 
       <!-- محتوای اصلی -->
-      <div class="flex-grow-1 d-flex flex-column section-box content-box">
-        <div class="mb-3 border rounded p-3 shadow-sm verse-box" style="width: 1198px;">
+      <div class="flex-1 flex flex-col section-box content-box">
+        <div class="verse-box border border-gray-700 p-3 rounded shadow-md w-full max-w-[1198px] mx-auto">
+          
+          <!-- آیه -->
+          <div class="text-center text-3xl font-bold leading-loose mb-3" style="font-family: 'Amiri', 'Scheherazade New', serif;">
+            ﴿ {{ verseText || 'لطفاً یک آیه انتخاب کنید' }} ﴾
+          </div>
 
-
-        <!-- آیه
-        <div class="text-center verse-text mb-3">
-          ﴿﴾
-        </div> -->
-        <!-- آیه -->
-        <div class="text-center verse-text mb-3">
-          ﴿ {{ verseText || 'لطفاً یک آیه انتخاب کنید' }} ﴾
-        </div>
-
-
-        <!-- معنی -->
-        <div class="text-center verse-meaning mb-4">
-          <li v-for="(line, idx) in translations[activeTab]?.translations" :key="idx">
-              {{ line }}
-          </li>
-        </div>
-
-        <div class="translation-box border-green">
-          <h5 class="section-title text-green">ترجمه‌های فارسی</h5>
-
-          <!-- تب‌ها (مترجمان) -->
-          <ul class="nav nav-tabs mb-3">
-            <li v-for="(translator, index) in translations" :key="translator.id" class="nav-item">
-              <button
-                class="nav-link"
-                :class="{ active: activeTab === index }"
-                @click="activeTab = index"
-              >
-                {{ translator.name }}
-              </button>
+          <!-- معنی -->
+          <div class="text-center text-cyan-400 mb-4">
+            <li v-for="(line, idx) in translations[activeTab]?.translations" :key="idx">
+                {{ line }}
             </li>
-          </ul>
+          </div>
 
-          <!-- نمایش ترجمه انتخاب شده -->
-          <div class="translation-content" v-if="translations.length > 0">
-            <ul class="list-unstyled">
-              <li v-for="(line, idx) in translations[activeTab]?.translations" :key="idx">
+          <!-- ترجمه‌های فارسی -->
+          <div class="translation-box border border-green-500 rounded p-5 mb-6 bg-[#1a1a1a]">
+            <h5 class="section-title text-green-500">ترجمه‌های فارسی</h5>
+            <!-- تب‌ها -->
+            <ul class="flex space-x-2 mb-3">
+              <li v-for="(translator, index) in translations" :key="translator.id">
+                <button
+                  class="px-3 py-1 rounded"
+                  :class="activeTab === index ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-300'"
+                  @click="activeTab = index"
+                >
+                  {{ translator.name }}
+                </button>
+              </li>
+            </ul>
+            <div>
+              <ul class="list-none">
+                <li v-for="(line, idx) in translations[activeTab]?.translations" :key="idx">
+                  {{ line }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- ترجمه انگلیسی -->
+          <div class="translation-box border border-green-500 rounded p-5 mb-6 bg-[#1a1a1a]" dir="ltr" v-if="translationsEn.length">
+            <h5 class="section-title text-green-500">English Translations</h5>
+            <ul class="flex space-x-2 mb-3">
+              <li v-for="(translator, index) in translationsEn" :key="translator.id">
+                <button
+                  class="px-3 py-1 rounded"
+                  :class="activeTabEn === index ? 'bg-green-500 text-white' : 'bg-gray-700 text-gray-300'"
+                  @click="activeTabEn = index"
+                >
+                  {{ translator.name }}
+                </button>
+              </li>
+            </ul>
+            <ul class="list-none">
+              <li v-for="(line, idx) in translationsEn[activeTabEn]?.translations" :key="idx">
                 {{ line }}
               </li>
             </ul>
           </div>
-          <div v-else>
-            <p class="text-muted">ترجمه‌ای برای این آیه یافت نشد</p>
-          </div>
-        </div>
-        
-        <div class="translation-box border-green" dir="ltr" v-if="translationsEn.length > 0">
-          <h5 class="section-title text-green">English Translations</h5>
 
-          <!-- تب‌ها (مترجمان) -->
-          <ul class="nav nav-tabs mb-3" style="padding-left: 0px;">
-            <li
-              v-for="(translator, index) in translationsEn"
-              :key="translator.id"
-              class="nav-item"
-            >
-              <button
-                class="nav-link"
-                :class="{ active: activeTabEn === index }"
-                @click="activeTabEn = index"
-              >
-                {{ translator.name }}
-              </button>
-            </li>
-          </ul>
-
-          <!-- نمایش ترجمه انتخاب شده -->
-          <div class="translation-content">
-            <ul class="list-unstyled" style="padding-left: 0px;">
-              <li v-for="(line, idx) in translationsEn[activeTabEn].translations" :key="idx">
-                {{ line }}
+          <!-- معانی کلمات -->
+          <div class="translation-box border border-red-500 rounded p-5 mb-6 bg-[#1a1a1a]" dir="rtl" v-if="translationsTable.length">
+            <h5 class="section-title text-red-500">معانی کلمات آیه</h5>
+            <ul class="flex space-x-2 mb-3">
+              <li v-for="(translator, index) in translationsTable" :key="translator.id">
+                <button
+                  class="px-3 py-1 rounded"
+                  :class="activeTabTable === index ? 'bg-red-500 text-white' : 'bg-gray-700 text-gray-300'"
+                  @click="activeTabTable = index"
+                >
+                  {{ translator.name }}
+                </button>
               </li>
             </ul>
+            <table class="table-auto w-full text-center border border-gray-700 rounded overflow-hidden">
+              <thead class="bg-gray-900 text-white">
+                <tr>
+                  <th class="border border-gray-700 px-2 py-1">کلمه</th>
+                  <th class="border border-gray-700 px-2 py-1">معنی</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(item, idx) in translationsTable[activeTabTable]?.words" :key="idx" class="hover:bg-gray-800">
+                  <td class="border border-gray-700 px-2 py-1">{{ item.word }}</td>
+                  <td class="border border-gray-700 px-2 py-1">{{ item.meaning }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </div>
 
-        <div class="translation-box border-red" dir="rtl" v-if="translationsTable.length > 0">
-          <h5 class="section-title text-red">معانی کلمات آیه</h5>
-
-          <!-- تب‌ها (مترجمان) -->
-          <ul class="nav nav-tabs mb-3">
-            <li
-              v-for="(translator, index) in translationsTable"
-              :key="translator.id"
-              class="nav-item"
-            >
-              <button
-                class="nav-link"
-                :class="{ active: activeTabTable === index }"
-                @click="activeTabTable = index"
-              >
-                {{ translator.name }}
-              </button>
-            </li>
-          </ul>
-
-          <!-- جدول معانی مترجم انتخاب‌شده -->
-          <table class="table table-sm table-bordered text-light rounded overflow-hidden custom-dark-table">
-            <thead class="text-center">
-              <tr>
-                <th style="background-color: var(--bg-dark);" class="text-light">کلمه</th>
-                <th style="background-color: var(--bg-dark);" class="text-light">معنی</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, idx) in translationsTable[activeTabTable].words" :key="idx">
-                <td>{{ item.word }}</td>
-                <td>{{ item.meaning }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="translation-box border-purple" dir="rtl" v-if="tafseerTranslations.length > 0" style="max-width: 1120px;">
-          <h5 class="section-title text-purple">تفسیر آیه</h5>
-
-          <!-- تب‌ها -->
-          <ul class="nav nav-tabs mb-3">
-            <li
-              v-for="(tafseer, index) in tafseerTranslations"
-              :key="tafseer.id"
-              class="nav-item"
-            >
-              <button
-                class="nav-link"
-                :class="{ active: activeInterpretationTab === index }"
-                @click="activeInterpretationTab = index"
-              >
-                {{ tafseer.name }}
-              </button>
-            </li>
-          </ul>
-
-          <!-- متن تفسیر انتخاب شده -->
-          <p class="text-light" style="min-height: 100px;">
-            {{ tafseerTranslations[activeInterpretationTab]?.text || 'تفسیر یافت نشد' }}
-          </p>
-        </div>
-
+          <!-- تفسیر -->
+          <div class="translation-box border border-purple-500 rounded p-5 mb-6 bg-[#1a1a1a]" dir="rtl" v-if="tafseerTranslations.length">
+            <h5 class="section-title text-purple-500">تفسیر آیه</h5>
+            <ul class="flex space-x-2 mb-3">
+              <li v-for="(tafseer, index) in tafseerTranslations" :key="tafseer.id">
+                <button
+                  class="px-3 py-1 rounded"
+                  :class="activeInterpretationTab === index ? 'bg-purple-500 text-white' : 'bg-gray-700 text-gray-300'"
+                  @click="activeInterpretationTab = index"
+                >
+                  {{ tafseer.name }}
+                </button>
+              </li>
+            </ul>
+            <p class="text-white min-h-[100px]">
+              {{ tafseerTranslations[activeInterpretationTab]?.text || 'تفسیر یافت نشد' }}
+            </p>
+          </div>
 
         </div>
       </div>
+
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref, onMounted, watch, defineProps, defineEmits } from 'vue'
@@ -546,7 +510,7 @@ watch(selectedAyah, () => {
 </script>
 
 
-<style scoped>
+<!-- <style scoped>
 :root {
   --bg-dark: #1a1a1a;
   --bg-dark-light: #242424;
@@ -705,4 +669,4 @@ body, html {
   border-radius: 4px;
 }
 
-</style>
+</style> -->

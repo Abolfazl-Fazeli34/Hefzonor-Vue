@@ -23,7 +23,7 @@
 
       <!-- تنظیمات -->
       <div class="menu-group">
-        <button @click="toggleMenuTooltip" class="icon-button">
+        <button data-modal-target="crud-modal" data-modal-toggle="crud-modal" class="icon-button">
           <i class="fas fa-ellipsis-h"></i>
         </button>
 
@@ -105,11 +105,7 @@
               </label>
               <input
                 v-if="settings.pauseAfter"
-                v-model="settings.PauseAfterRecitation"
-                type="number"
-                min="1"
-                class="form-input"
-                placeholder="ثانیه"
+                v-model="settings.PauseAfterRecitation" type="number" min="1" class="form-input" placeholder="ثانیه"
               />
             </div>
           </div>
@@ -152,6 +148,85 @@
       @loadedmetadata="setDuration"
     ></audio>
   </div>
+
+
+
+  <div id="crud-modal" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full transition-all">
+    <div class="relative p-4 w-full max-w-md max-h-full">
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
+            <!-- Modal header -->
+            <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600 border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    تنظیمات صوت
+                </h3>
+                <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="crud-modal">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
+            <!-- Modal body -->
+            <form class="p-4 md:p-5">
+                <div class="grid gap-4 mb-4 grid-cols-2">
+                    <div class="col-span-2">
+                        <label for="default" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">انتخاب قاری</label>
+                        <select v-model="settings.selectedQari" id="default" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                          <option v-for="q in settings.qari" :key="q.id" :value="q">{{ q.name }} ({{ q.type }})<span v-if="q.language"> ({{q.language}})</span></option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-1">
+                      <label for="price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">از:</label>
+                      <select v-model="settings.fromIndex" name="price" id="price" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                        <option v-for="(f, index) in settings.from" :key="index" :value="index">
+                          {{ f.surahName }} ({{ f.aya }})
+                        </option>
+                      </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label for="price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">تا:</label>
+                        <select v-model="settings.toIndex" id="price" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                          <option 
+                            v-for="(t, index) in filteredToOptions" 
+                            :key="index" 
+                            :value="index + settings.fromIndex">
+                            {{ t.surahName }} ({{ t.aya }})
+                          </option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-1">
+                        <label for="price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">تکرار محدوده</label>
+                        <input v-model="settings.repeatRange" type="number" name="price" id="price" min="1" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="$2999"  >
+                    </div>
+                    <div class="col-span-1">
+                        <label for="price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">تکرار آیه</label>
+                        <input type="number" min="1" v-model="settings.repeatAya" name="price" id="price" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="$2999"  >
+                    </div>
+
+                    <div class="col-span-2">
+                        <label for="default" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">سرعت بخش</label>
+                        <select v-model="settings.speed" id="default" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500">
+                          <option v-for="(s, index) in settings.speedOptions" :key="index" :value="s.value">
+                            {{ s.label }}
+                          </option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-2">
+                        <label for="default" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">وقفه بعد از قرائت</label>
+                        <input v-model="settings.PauseAfterRecitation" type="number" min="1"  id="default" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"></input>
+                    </div>
+                </div>
+                <button type="submit" class="text-white inline-flex items-center bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                    save
+                </button>
+            </form>
+        </div>
+    </div>
+</div> 
 </template>
 
 <script setup>
@@ -486,7 +561,7 @@ onBeforeUnmount(() => {
   transition: transform 0.3s ease; /* انیمیشن نرم */
 }
 .audio-player.active {
-  transform: translateY(0px); /* وقتی currentSurah مقدار داشته باشه */
+  transform: translateY(0px);
 }
 
 .progress-container {
@@ -498,7 +573,6 @@ onBeforeUnmount(() => {
   background-color: #1e293b;
   cursor: pointer;
 }
-
 .progress-bar {
   height: 100%;
   background-color: var(--text-accent);
@@ -518,7 +592,6 @@ onBeforeUnmount(() => {
   font-size: 1.2rem;
   cursor: pointer;
 }
-
 .icon-button:hover {
   color: var(--icon-hover);
 }
@@ -545,7 +618,6 @@ onBeforeUnmount(() => {
   border-radius: 6px;
   padding: 0.5rem;
   z-index: 10;
-
 }
 
 .volume-group,
@@ -565,23 +637,132 @@ onBeforeUnmount(() => {
   user-select: none;
 }
 
-@media (max-width: 576px) {
+/* --- ریسپانسیو --- */
+
+
+/* موبایل خیلی کوچک (زیر 400px) */
+@media (max-width: 400px) {
   .audio-player {
-    flex-direction: column;
+    /* flex-direction: column; */
     height: auto;
-    gap: 0.5rem;
-    padding: 0.5rem;
+    gap: 0.4rem;
+    padding: 0.35rem;
   }
-
   .controls {
-    gap: 0.8rem;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
-
+  .play-button {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+  .icon-button {
+    font-size: 0.85rem;
+  }
   .time-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
+    width: auto;
+  }
+  .progress-container {
+    height: 3px;
   }
 }
 
+/* موبایل معمولی */
+@media (min-width: 401px) and (max-width: 576px) {
+  .audio-player {
+    /* flex-direction: column; */
+    height: auto;
+    gap: 0.6rem;
+    padding: 0.5rem;
+  }
+  .controls {
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .play-button {
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
+  .icon-button {
+    font-size: 0.95rem;
+  }
+  .time-label {
+    font-size: 0.7rem;
+    width: auto;
+  }
+  .progress-container {
+    height: 3px;
+  }
+}
+
+/* تبلت */
+@media (min-width: 577px) and (max-width: 768px) {
+  .audio-player {
+    padding: 0.5rem 1rem;
+    height: auto;
+    gap: 0.8rem;
+  }
+  .controls {
+    gap: 1rem;
+  }
+  .play-button {
+    width: 38px;
+    height: 38px;
+    font-size: 1.3rem;
+  }
+  .icon-button {
+    font-size: 1.1rem;
+  }
+  .volume-tooltip-width-for-panel-setting {
+    width: 300px;
+    transform: translateX(80px);
+  }
+}
+
+/* لپ‌تاپ */
+@media (min-width: 769px) and (max-width: 992px) {
+  .audio-player {
+    padding: 0.5rem 1rem;
+  }
+  .controls {
+    gap: 1rem;
+  }
+  .play-button {
+    width: 40px;
+    height: 40px;
+  }
+  .volume-tooltip-width-for-panel-setting {
+    width: 320px;
+    transform: translateX(120px);
+  }
+}
+
+/* دسکتاپ بزرگ */
+@media (min-width: 1200px) {
+  .audio-player {
+    padding: 0 2rem;
+  }
+  .controls {
+    gap: 1.5rem;
+  }
+  .play-button {
+    width: 42px;
+    height: 42px;
+    font-size: 1.5rem;
+  }
+  .icon-button {
+    font-size: 1.3rem;
+  }
+  .volume-tooltip-width-for-panel-setting {
+    width: 350px;
+    transform: translateX(143px);
+  }
+}
 
 .settings-panel {
   background-color: var(--bg-dark);
@@ -599,40 +780,15 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 0.25rem 0.5rem;
-  box-sizing: border-box;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .form-select:focus,
 .form-input:focus {
   outline: none;
-  /* border-color: var(--text-accent); */
 }
 
-.menu-tooltip,
-.volume-tooltip {
-  position: absolute;
-  bottom: 50px;
-  background-color: var(--bg-dark);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 0.5rem;
-  z-index: 10;
-  white-space: normal;
-}
-
-.volume-tooltip-width-for-panel-setting{
-  width: 350px;
-  transform: translateX(143px);
-}
-
-.display{
-      display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* ترجمه‌ها */
 .translation-box {
   background-color: rgba(255, 255, 255, 0.025);
   border: 1px solid;
@@ -640,13 +796,9 @@ onBeforeUnmount(() => {
   padding: 1.25rem;
   margin-bottom: 1.5rem;
 }
-
-
-
 .border-green {
   border-color: var(--green);
 }
-
 
 /* اسکرول سفارشی */
 .custom-offcanvas::-webkit-scrollbar {

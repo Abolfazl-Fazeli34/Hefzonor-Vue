@@ -8,11 +8,31 @@ const routes = [
     name: "Home", 
     component: () => import('@/components/HomeComponent.vue')
   },
+
+  // مسیر سوره
   {
-    path: '/quran', 
-    name: 'quran', 
+    path: '/quran/:surahno',
+    name: 'quran-surah',
     component: TabbedContent,
+    props: true
   },
+
+  // مسیر جزء
+  {
+    path: '/quran/juz/:juzno',
+    name: 'quran-juz',
+    component: TabbedContent,
+    props: true
+  },
+
+  // مسیر صفحه
+  {
+    path: '/quran/page/:pageno',
+    name: 'quran-page',
+    component: TabbedContent,
+    props: true
+  },
+
   {
     path: '/Search', 
     name: 'Search', 
@@ -22,9 +42,23 @@ const routes = [
     path: '/quran/details/:surahno/:verse_number', 
     name: 'quran-details', 
     component: QuranDetails,
-    props: true, // این خط باعث می‌شود مقادیر پارامترها به عنوان props به کامپوننت ارسال شوند
+    props: true,
   },
- 
+  {
+    path: '/testcom',
+    name: 'testcom',
+    component: () => import('@/components/TestComponent.vue')
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/components/LoginPage/LoginComponent.vue')
+  },
+  {
+    path: '/qurans/:surahno',
+    name: 'QuranPage',
+    component: () => import('@/components/QuranPage.vue') 
+  }
 ]
 
 const router = createRouter({

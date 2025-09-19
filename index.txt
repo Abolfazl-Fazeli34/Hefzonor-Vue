@@ -1,0 +1,127 @@
+<div
+  v-for="group in filteredItems"
+  :key="group.page"
+  class="p-2 my-3"
+  style="user-select: text !important; width: 562.781px; margin: 0 auto;"
+>
+  <template v-for="(x, index) in group.items" :key="`${x.id}-${x.verse_number}-${x.word_number}-${x.code}-${index}`">
+    <div
+      v-if="x === group.items[0] || x.line !== group.items[group.items.indexOf(x) - 1]?.line"
+      class="d-flex flex-wrap no-drag position-relative"
+      :style="{
+        lineHeight: '3.2rem',
+        justifyContent: (surahno === 1 || surahno === 2 || surahno === 114 || surahno === 113 || surahno === 112) && 
+                        (x.page === 1 || x.page === 2 || x.page === 604) 
+                        ? 'center' 
+                        : 'space-between',
+        alignItems: 'center',
+        userSelect: 'text !important'
+      }"
+    >
+      <template
+        v-for="y in group.items.filter(i => i.line === x.line)"
+        :key="`${y.id}-${y.verse_number}-${y.word_number}-${y.code}`"
+      >
+        <!-- عنوان سوره -->
+        <div v-if="y.type === 2" class="d-flex justify-content-center flex-wrap gap-1">
+          <span class="surah-title">{{ y.code }}</span>
+        </div>
+
+        <!-- Type 6 -->
+        <div v-else-if="y.type === 6" class="d-flex justify-content-center flex-wrap gap-1 mt-3">
+          <span style="font-size: 2.4rem; font-family: 'QCF_BSML', sans-serif;">
+            {{ y.code }}
+          </span>
+        </div>
+
+        <!-- سایر کلمات -->
+        <span
+          v-else
+          @mouseover="hoveredAyaNumber = y.verse_number"
+          @mouseleave="hoveredAyaNumber = null"
+          @click.stop="selectAya(y)"
+          :class="[
+            y.type === 3 ? 'word-hover fontSizeNumber' : 'normal-word word-hover font-' + y.fontName,
+            'font-' + y.fontName,
+            'position-relative',
+            'custom-font',
+            (currentAya && y.verse_number === currentAya.ayaNumber && surahno === currentAya.surahId) ? 'ayah-highlight' : '',
+            (hoveredAyaNumber === y.verse_number) ? 'hover-highlight' : ''
+          ]"
+          :id="'ayah-' + y.verse_number"
+          :style="{
+            fontSize: y.type === 1 ? '35.28px' : (y.type === 3 ? '2rem' : ''),
+            opacity: (y.type !== 3 && updateHiddenAyas.has(y.id)) ? 0 : 1,
+            transition: 'opacity 0.5s'
+          }"
+        >
+          {{ y.type === 3 ? `${y.code}` : y.code }}
+
+          <!-- تولتیپ با گزینه‌ها -->
+          <div v-if="activeTooltipId === y.id" class="custom-tooltip" @click.stop>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <small class="text-light">{{ y.code }}</small>
+              <button type="button" class="btn-close btn-close-white btn-sm" style="font-size: 16px;" aria-label="بستن" @click="closeTooltip"></button>
+            </div>
+
+            <div class="d-flex justify-content-around gap-2">
+              <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-light" @click="playAudioWord(y)" title="پخش آیه">
+                <i class="bi bi-play-fill"></i>
+              </button>
+              <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="copyWord(y.arabic_text)" title="کپی آیه">
+                <i class="bi bi-clipboard"></i>
+              </button>
+              <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="shareAya(y)" title="اشتراک‌گذاری آیه">
+                <i class="bi bi-share-fill"></i>
+              </button>
+              <router-link :to="`/quran/details/${surahno}/${y.verse_number ?? y.aya_index}`" style="display: contents;">
+                <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" title="ترجمه و تفسیر">
+                  <i class="bi bi-globe2"></i>
+                </button>
+              </router-link>
+              <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="searchWord(y.arabic_text)" title="جستجوی کلمه">
+                <i class="bi bi-search"></i>
+              </button>
+              <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="openBookmarkModal(y)" title="علامت‌گذاری">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+            </div>
+          </div>
+        </span>
+      </template>
+    </div>
+  </template>
+
+  <!-- شماره صفحه -->
+  <div class="text-center mt-4">
+    <span style="color: darkgray; font-size: 1rem;">صفحه {{ group.page }}</span>
+  </div>
+  <hr class="bg-secondary mt-1" />
+</div>
+
+
+
+
+const loadSurah = async (type = "surah", value = null, url = null) => {
+  let apiUrl;
+
+  if (type === "juz") {
+    apiUrl = `http://localhost:8000/api/v1/quran/surahs/?juz=${value}`;
+  } else if (type === "surah") {
+    apiUrl = `http://localhost:8000/api/v1/quran/surahs/?id=${value}`;
+  }
+
+  try {
+    const response = await axios.get(apiUrl);
+    if (!response.data.results.length) return;
+
+    // حلقه روی همه سوره‌های جزء
+    for (const surah of response.data.results) {
+      await processSurah(surah);
+    }
+  } catch (err) {
+    console.error("Axios error:", err);
+  }
+};
+
+

@@ -16,153 +16,116 @@
 
     <!-- محتوای تب‌ها -->
     <div class="tab-content mt-4">
-      <!-- تب صفحه ای سوره -->
+
+      <!-- تب صفحه‌ای سوره -->
       <div v-show="activeTab === 'tab1'" class="tab-pane fade show active card p-4" :style="contentStyleTab1">
         <div class="original text-center">
-
-          <!-- نام سوره -->
-          <div class="d-flex justify-content-center flex-wrap gap-1">
-            <span v-for="x in surahTitleItems" :key="x.id" class="fw-bold surah-title">
-              سوره {{ x.name }}
-            </span>
-          </div>
-
-          <!-- بسم‌الله -->
-          <div class="d-flex justify-content-center flex-wrap gap-1 mt-3">
-            <span
-              v-for="word in secondLineItems"
-              :key="word.id"
-              style="font-size: 2.4rem;"
-              :class="word.type === 3 ? 'basmala QCF_BSML' : 'normal-word QCF_BSML'"
-            >
-              {{ word.code }}
-            </span>
-          </div>
-
           <!-- بخش صوت صفحه با آیکون و متن کنار هم -->
-          <div class="d-flex justify-content-between align-items-center mt-3 " style="max-width: 80%; margin: 0 auto;">
+          <div class="flex justify-between items-center mt-3 mx-auto" style="max-width: 80%;">
             <button
               type="button"
-              class="button btn p-0 text-white d-flex align-items-center gap-2 icons-bar2"
+              class="flex items-center gap-2 p-0 text-white hover:text-blue-400 transition icons-bar2"
               style="margin-top: 4px;"
               @click="playSurahAudio1"
             >
-              <i class="bi bi-play-fill fs-5"></i>
+              <i class="bi bi-play-fill text-lg"></i>
               <span>بخش صوت</span>
             </button>
 
-            <button type="button" class="button btn p-0 text-secondary icons-bar2" @click="openSettingsModal">
-              <i class="bi bi-gear-fill fs-5"></i>
+            <button
+              type="button"
+              class="p-0 text-gray-400 hover:text-white transition icons-bar2"
+              @click="openSettingsModal"
+            >
+              <i class="bi bi-gear-fill text-lg"></i>
             </button>
-
           </div>
 
           <audio ref="wordAudio" :src="audioSrc" preload="auto"></audio>
 
-          <!-- <div v-if="isLoadingSurah" class="skeleton-wrapper">
-            <div class="skeleton-line" v-for="n in 8" :key="n"></div>
-          </div> -->
           <!-- آیات بر اساس صفحه -->
-          <div  v-for="group in filteredItems" :key="group.page" class="p-2 my-3" style="user-select: text !important;width: 562.781px;margin: 0 auto;">
+          <div v-for="group in filteredItems" :key="group.page" class="my-3 p-2 mx-auto" style="width: 562.781px; user-select: text !important;">
             <template v-for="(x, index) in group.items" :key="`${x.id}-${x.verse_number}-${x.word_number}-${x.code}-${index}`">
               <div
                 v-if="x === group.items[0] || x.line !== group.items[group.items.indexOf(x) - 1]?.line"
-                class="d-flex flex-wrap no-drag position-relative"
-                :style="{
-                  lineHeight: '3.2rem',
-                  justifyContent: (surahno === 1 || surahno === 2 || surahno === 114 || surahno === 113 || surahno === 112) && (x.page === 1 || x.page === 2 || x.page === 604) 
-                    ? 'center' 
-                    : 'space-between',
-                  alignItems: 'center',
-                  gap: '2px',
-                  userSelect: 'text !important'
-                }"
+                class="flex flex-wrap relative"
+                :class="{'justify-center': centerPages.includes(x.page), 'justify-between': !centerPages.includes(x.page)}"
+                style="line-height: 3.2rem; align-items: center; user-select: text !important;"
               >
-                <template
-                  v-for="y in group.items.filter(i => i.line === x.line)"
-                  :key="`${y.id}-${y.verse_number}-${y.word_number}-${y.code}`"
-                >
-                <span
-                  @mouseover="hoveredAyaNumber = y.verse_number"
-                  @mouseleave="hoveredAyaNumber = null"
-                  @click.stop="selectAya(y)"
-                  :class="[
-                    y.type == 3 ? 'word-hover fontSizeNumber ' : 'normal-word word-hover font-' + y.fontName,
-                    'font-' + y.fontName,
-                    'position-relative',
-                    'custom-font',
-                    (currentAya && y.verse_number === currentAya.ayaNumber && surahno === currentAya.surahId) ? 'ayah-highlight' : '',
-                    (hoveredAyaNumber === y.verse_number) ? 'hover-highlight' : ''
-                  ]"
-                  :id="'ayah-' + y.verse_number"
-                  :style="{
-                    fontSize: y.type == 1 ? '35.28px' : (y.type == 2 ? '3.3rem' : (y.type == 3 ? '2rem' : '')),
-                    opacity: (y.type !== 3 && hiddenAyas.has(y.verse_number)) ? 0 : 1,  // اگر type=3 باشه هیچوقت 0 نمی‌شود
-                    transition: 'opacity 0.5s'
-                  }"
-                >
-                  {{ y.type === 3 ? `${y.code}` : y.code }}
+                <template v-for="y in group.items.filter(i => i.line === x.line)" :key="`${y.id}-${y.verse_number}-${y.word_number}-${y.code}`">
+                  <!-- اسم سوره -->
+                  <div v-if="y.type === 2" class="flex justify-center flex-wrap gap-1">
+                    <span class="surah-title">{{ y.code }}</span>
+                  </div>
+
+                  <!-- بسم الله الرحمن الرحیم -->
+                  <div v-else-if="y.type === 6" class="flex justify-center flex-wrap gap-1 mt-3">
+                    <span class="text-[2.4rem] font-QCF_BSML">{{ y.code }}</span>
+                  </div>
+
+                  <!-- بقیه حالت‌ها -->
+                  <span
+                    v-else
+                    @mouseover="hoveredAyaNumber = y.verse_number"
+                    @mouseleave="hoveredAyaNumber = null"
+                    @click.stop="selectAya(y)"
+                    :id="'ayah-' + y.verse_number"
+                    :class="[
+                      y.type == 3 ? 'word-hover text-base' : 'normal-word word-hover font-' + y.fontName,
+                      'font-' + y.fontName,
+                      'relative custom-font',
+                      (currentAya && y.verse_number === currentAya.ayaNumber && surahno === currentAya.surahId) ? 'bg-yellow-400/40 rounded-md' : '',
+                      (hoveredAyaNumber === y.verse_number) ? 'bg-gray-700/50 rounded-md' : ''
+                    ]"
+                    :style="{
+                      fontSize: y.type === 1 ? '35.28px' : (y.type === 3 ? '2rem' : ''),
+                      opacity: (y.type !== 3 && updateHiddenAyas.has(y.id)) ? 0 : 1,
+                      transition: 'opacity 0.5s'
+                    }"
+                  >
+                    {{ y.type === 3 ? `${y.code}` : y.code }}
 
                     <!-- تولتیپ با گزینه اشتراک‌گذاری -->
-                    <div
-                      v-if="activeTooltipId === y.id"
-                      class="custom-tooltip"
-                      @click.stop
-                    >
-                      <!-- هدر تولتیپ -->
-                      <div class="d-flex justify-content-between align-items-center mb-2">
-                        <small class="text-light">{{ y.code }}</small>
-                        <button
-                          type="button"
-                          class="btn-close btn-close-white btn-sm"
-                          style="font-size: 16px;"
-                          aria-label="بستن"
-                          @click="closeTooltip"
-                        ></button>
+                    <div v-if="activeTooltipId === y.id" class="absolute z-50 bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-lg p-2 shadow-lg top-full left-1/2 -translate-x-1/2">
+                      <div class="flex justify-between items-center mb-2">
+                        <small class="text-gray-200">{{ y.code }}</small>
+                        <button type="button" class="text-white text-sm" aria-label="بستن" @click="closeTooltip">
+                          ×
+                        </button>
                       </div>
 
-                      <!-- دکمه‌های عملیاتی -->
-                      <div class="d-flex justify-content-around gap-2">
+                      <div class="flex justify-around gap-2">
                         <!-- پخش آیه -->
-                        <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-light" @click="playAudioWord(y)" title="پخش آیه">
+                        <button type="button" class="btn btn-sm border border-gray-400 text-gray-200 rounded hover:bg-gray-700" @click="playAudioWord(y)" title="پخش آیه">
                           <i class="bi bi-play-fill"></i>
                         </button>
 
                         <!-- کپی آیه -->
-                        <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="copyWord(y.arabic_text)" title="کپی آیه">
+                        <button type="button" class="btn btn-sm border border-gray-400 text-gray-200 rounded hover:bg-gray-700" @click="copyWord(y.arabic_text)" title="کپی آیه">
                           <i class="bi bi-clipboard"></i>
                         </button>
 
                         <!-- اشتراک‌گذاری -->
-                        <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="shareAya(y)" title="اشتراک‌گذاری آیه">
+                        <button type="button" class="btn btn-sm border border-gray-400 text-gray-200 rounded hover:bg-gray-700" @click="shareAya(y)" title="اشتراک‌گذاری آیه">
                           <i class="bi bi-share-fill"></i>
                         </button>
 
                         <!-- ترجمه و تفسیر آیه -->
-                        <router-link :to="`/quran/details/${surahno}/${y.verse_number ?? y.aya_index}`" style="display: contents;">
-                          <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" title="ترجمه و تفسیر">
+                        <router-link :to="`/quran/details/${surahno}/${y.verse_number ?? y.aya_index}`" class="contents">
+                          <button type="button" class="btn btn-sm border border-gray-400 text-gray-200 rounded hover:bg-gray-700" title="ترجمه و تفسیر">
                             <i class="bi bi-globe2"></i>
                           </button>
                         </router-link>
 
                         <!-- جستجوی کلمه -->
-                        <button style="height: 50%;" type="button" class="btn btn-sm btn-outline-secondary" @click="searchWord(y.arabic_text)" title="جستجوی کلمه">
+                        <button type="button" class="btn btn-sm border border-gray-400 text-gray-200 rounded hover:bg-gray-700" @click="searchWord(y.arabic_text)" title="جستجوی کلمه">
                           <i class="bi bi-search"></i>
                         </button>
 
-                        <!-- علامت زدن / Bookmark -->
-                        <!-- علامت زدن با قلم -->
-                      <!-- دکمه‌ها (داخل v-for) -->
-                      <!-- دکمه (داخل v-for) -->
-                      <button 
-                        style="height: 50%;" 
-                        type="button" 
-                        class="btn btn-sm btn-outline-secondary" 
-                        @click="openBookmarkModal(y)" 
-                        title="علامت‌گذاری"
-                      >
-                        <i class="bi bi-pencil-square"></i>
-                      </button>
+                        <!-- علامت زدن -->
+                        <button type="button" class="btn btn-sm border border-gray-400 text-gray-200 rounded hover:bg-gray-700" @click="openBookmarkModal(y)" title="علامت‌گذاری">
+                          <i class="bi bi-pencil-square"></i>
+                        </button>
                       </div>
                     </div>
                   </span>
@@ -171,35 +134,22 @@
             </template>
 
             <!-- شماره صفحه -->
-            <div class="text-center mt-4">
-              <span style="color: darkgray; font-size: 1rem;">صفحه {{ group.page }}</span>
-            </div>
-            <hr class="bg-secondary mt-1" />
+            <div class="text-center mt-4 text-gray-400 text-base">صفحه {{ group.page }}</div>
+            <hr class="bg-gray-600 mt-1" />
           </div>
 
           <!-- دکمه‌های جابه‌جایی سوره -->
-          <div class="d-flex justify-content-between mt-4" v-show="surahno !== null">
-            <button
-              @click="goToPrevSurah"
-              :disabled="surahno <= 1"
-              class="btn btn-outline-light"
-            >
+          <div class="flex justify-between mt-4" v-show="surahno !== null">
+            <button @click="goToPrevSurah" :disabled="surahno <= 1" class="px-4 py-2 border border-gray-400 text-gray-200 rounded hover:bg-gray-700 disabled:opacity-50">
               ▶ سوره قبلی
             </button>
 
-            <button
-              @click="goToNextSurah"
-              :disabled="surahno >= maxSurah"
-              class="btn btn-outline-light"
-            >
+            <button @click="goToNextSurah" :disabled="surahno >= maxSurah" class="px-4 py-2 border border-gray-400 text-gray-200 rounded hover:bg-gray-700 disabled:opacity-50">
               سوره بعدی ◀
             </button>
           </div>
-
-
         </div>
       </div>
-
 
       <!-- تب آیه‌ای سوره -->
       <div v-show="activeTab === 'tab2'" class="tab-pane fade show active card p-4" :style="contentStyleTab2">
@@ -478,26 +428,20 @@
       </div>
     </div>
     <!-- ----------------------------- -->
-  <!-- نوبار کناری -->
-  <div :class="['sidebar', { 'sidebar-active': isActive }]">
-  <button 
-    v-for="btn in buttons" 
-    :key="btn.id" 
-    :title="btn.title"
-    class="sidebar-btn"
-    :class="{ 'btn-active': btn.active }"
-    @click="selectedAya ? btn.action(selectedAya) : null"  
-  >
-    <i :class="btn.icon"></i>
-  </button>
-
-  <!-- <button class="toggle-btn" @click="toggleSidebar">
-    <i class="bi" :class="isActive ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
-  </button> -->
-</div>
-
-
-
+    <!-- نوبار کناری -->
+    <div :class="['sidebar', { 'sidebar-active': isActive }]">
+      <button 
+        v-for="btn in buttons" 
+        :key="btn.id" 
+        :title="btn.title"
+        class="sidebar-btn"
+        :class="{ 'btn-active': btn.active }"
+        @click="selectedAya ? btn.action(selectedAya) : null"  
+      >
+        <i :class="btn.icon"></i>
+      </button>
+    </div>
+    <!-- ------------------------------------------------- -->
   </div>
 
 </template>
@@ -506,15 +450,18 @@
 <script setup>
 import { ref, watch, nextTick, computed, onMounted ,onBeforeUnmount, reactive } from 'vue';
 import axios from 'axios';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import { Modal } from "bootstrap";
 
 const store = useStore();
 const router = useRouter();
-const props = defineProps({
-  id_sure: Number
-});
+const route = useRoute(); // اضافه کن
+// const props = defineProps({
+//   id_sure: Number
+// });
+
+
 
 // متغیرها
 const activeTab = ref('tab1');
@@ -522,6 +469,7 @@ const surahTitleItems = ref([]);
 const verse_count = ref()
 const secondLineItems = ref([]);
 const filteredItems = ref([]);
+const juzno = ref(null);
 const surahno = ref(null);
 const maxSurah = ref(114);
 const nextVersesUrl = ref(null);
@@ -544,6 +492,38 @@ const hoveredAyaNumber = ref(null);
 const selectedAya = ref(null); // ایه فعلی که نوبار روی آن کار می‌کند
 const hiddenAyas = reactive(new Set()); // ایه‌هایی که محو شده‌اند
 const isActive = ref(false);
+const speedMap = {
+  instant: 0,        // نمایش یکباره
+  very_fast: 50,     // بسیار سریع
+  fast: 120,         // سریع
+  medium: 250,       // متوسط
+  smooth: 400,       // ملایم
+  slow: 600          // کند
+};
+const centerPages = [1, 2, 593, 594, 595, 596, 597, 598, 599, 600, 601, 602, 603, 604];
+
+const normalizeArabicToPersian = (text) => {
+  if (!text) return "";
+
+  return text
+    // حذف اعراب و نشانه‌های قرآنی
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
+    // حروف عربی → فارسی
+    .replace(/ي/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/إ/g, "ا")
+    .replace(/أ/g, "ا")
+    .replace(/آ/g, "ا")
+    .replace(/ئ/g, "ی")
+    .replace(/ء/g, "") // حذف همزه تنها
+    // حذف فاصله‌های اضافی
+    .replace(/\u200c/g, "") // حذف نیم فاصله
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 
 
 // پیش‌فرض تب فعال
@@ -553,6 +533,14 @@ const activeTab3 = ref('page'); // اینجا 'page' پیش‌فرض فعال ا
 const switchTab3 = (tabName) => {
   activeTab.value = tabName;
 };
+
+const activeGoToTab = ref("verse");
+const selectedSurah = ref("");
+const selectedVerse = ref("");
+const selectedPage = ref(1);
+const selectedJuz = ref(1);
+
+const selectedHizb = ref(null);
 
 
 const displayModes = {
@@ -770,6 +758,7 @@ const contentStyleTab1 = {
   margin: '0 auto',
   textAlign: 'justify',
   textJustify: 'inter-word',
+  minHeight: "660px",
 };
 
 const contentStyleTab2 = {
@@ -885,7 +874,7 @@ const ayahWiseItems = computed(() => {
             verse: word.verse_number,
             text: '',
             page: pageGroup.page,
-            key: `${pageGroup.page}-${idx}`, // ✅ کلید یکتا برای مقایسه
+            key: `${pageGroup.page}-${idx}`,
             translation: translationsMap.value[word.verse_number] || '',
           };
           idx++;
@@ -899,108 +888,179 @@ const ayahWiseItems = computed(() => {
 });
 
 
-
 // تغییر سوره
 const goToNextSurah = () => {
-  if (surahno.value < maxSurah.value) {
+  if (activeGoToTab.value === "verse" && surahno.value < maxSurah.value) {
     surahno.value++;
     resetSurah();
-    loadSurah();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
     isLoadingSurah.value = true;
+    loadSurah("surah", surahno.value);
+    router.push({ name: "quran-surah", params: { surahno: surahno.value } });
+  } 
+  else if (activeGoToTab.value === "page" && selectedPage.value != null) {
+    selectedPage.value++;
+    resetSurah();
+    isLoadingSurah.value = true;
+    loadSurah("page", selectedPage.value); // ← استفاده از selectedPage.value
+    router.push({ name: "quran-page", params: { pageno: selectedPage.value } });
+  } 
+  else if (activeGoToTab.value === "juz" && selectedJuz.value != null) {
+    selectedJuz.value++;
+    resetSurah();
+    isLoadingSurah.value = true;
+    loadSurah("juz", selectedJuz.value); // ← استفاده از selectedJuz.value
+    router.push({ name: "quran-juz", params: { juzno: selectedJuz.value } });
   }
 };
+
+
 const goToPrevSurah = () => {
-  if (surahno.value > 1) {
+  if (activeGoToTab.value === "verse" && surahno.value > 1) {
     surahno.value--;
     resetSurah();
-    loadSurah();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
     isLoadingSurah.value = true;
+    loadSurah("surah", surahno.value);
+    router.push({ name: "quran-surah", params: { surahno: surahno.value } });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } 
+  else if (activeGoToTab.value === "page" && selectedPage.value > 1) {
+    selectedPage.value--;
+    resetSurah();
+    isLoadingSurah.value = true;
+    loadSurah("page", selectedPage.value);
+    router.push({ name: "quran-page", params: { pageno: selectedPage.value } });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } 
+  else if (activeGoToTab.value === "juz" && selectedJuz.value > 1) {
+    selectedJuz.value--;
+    resetSurah();
+    isLoadingSurah.value = true;
+    loadSurah("juz", selectedJuz.value);
+    router.push({ name: "quran-juz", params: { juzno: selectedJuz.value } });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 };
 
 
 
-// بارگذاری سوره و تمام صفحات آن
-const loadSurah = async (url = null) => {
-  const apiUrl = url || `http://localhost:8000/api/v1/quran/surahs/?id=${surahno.value}`;
+
+// بارگذاری سوره یا جزء و تمام صفحات آن
+const loadSurah = async (type = "surah", value = null, url = null) => {
+  isLoadingSurah.value = true;
+
+  if (!url) {
+    filteredItems.value = [];
+    globalWordKeys.clear();
+  }
+
+  let apiUrl;
+  if (url) {
+    apiUrl = url;
+  } else if (type === "juz") {
+    apiUrl = `http://localhost:8000/api/v1/quran/surahs/?juz=${value}`;
+  } else if (type === "surah") {
+    apiUrl = `http://localhost:8000/api/v1/quran/surahs/?id=${value}`;
+  } else if (type === "page") {
+    apiUrl = `http://localhost:8000/api/v1/quran/surahs/?page_number=${value}`;
+  }
+
   try {
     const response = await axios.get(apiUrl);
-    if (!response.data.results.length) return;
+    if (!response.data.results?.length) return;
 
-    const surah = response.data.results[0];
-    if (!url) {
-      surahTitleItems.value = [surah];
-      verse_count.value = surah.verse_count
-      secondLineItems.value = surah.bismillah || [];
-    }
+    const allFontSet = new Set();
+    const allVerseNumbers = new Set();
 
-    const verses = surah.verses?.results || [];
-    const allWords = [];
-    const verseNumbers = new Set();
+    for (const surah of response.data.results) {
+      const verses = surah.verses?.results || [];
+      const allWords = [];
 
-    verses.forEach(verse => {
-      if (Array.isArray(verse.items)) {
-        verse.items.forEach(word => {
+      verses.forEach(verse => {
+        verse.items?.forEach(word => {
           if (!globalWordKeys.has(word.id) && !wordExistsInFiltered(word.id)) {
             globalWordKeys.add(word.id);
             allWords.push(word);
-            if (word.verse_number) verseNumbers.add(word.verse_number);
+            if (word.verse_number) allVerseNumbers.add(word.verse_number);
+            if (word.fontName && word.fontPage) allFontSet.add(`${word.fontName}|${word.fontPage}`);
           }
         });
-      }
-    });
+      });
 
-    const groupedByPage = {};
-    const fontSet = new Set();
+      const groupedByPage = {};
+      allWords.forEach(word => {
+        const page = word.page || 0;
+        if (!groupedByPage[page]) groupedByPage[page] = [];
+        groupedByPage[page].push(word);
+      });
 
-    allWords.forEach(word => {
-      const page = word.page || 0;
-      if (!groupedByPage[page]) groupedByPage[page] = [];
-      groupedByPage[page].push(word);
-      if (word.fontName && word.fontPage) {
-        fontSet.add(`${word.fontName}|${word.fontPage}`);
-      }
-    });
-
-    Object.keys(groupedByPage).forEach(page => {
-      const newItems = removeDuplicatesById(groupedByPage[page]);
-      const existingPage = filteredItems.value.find(p => p.page === Number(page));
-      if (existingPage) {
-        existingPage.items = removeDuplicatesById([...existingPage.items, ...newItems]);
-      } else {
-        filteredItems.value.push({ page: Number(page), items: newItems });
-      }
-    });
-
-    filteredItems.value.sort((a, b) => a.page - b.page);
-    filteredItems.value.forEach(pg => {
-      pg.items = removeDuplicatesById(pg.items);
-    });
-
-    fontSet.forEach(fontStr => {
-      const [fontName, fontPage] = fontStr.split('|');
-      loadFont(fontName, fontPage);
-    });
-
-    // ✅ بارگذاری ترجمه‌ها همزمان با لود هر صفحه
-    for (const verse of verseNumbers) {
-      try {
-        const res = await axios.get(`http://localhost:8000/api/v1/quran/verse/translation/?verse=${verse}&translator=6&surah=${surahno.value}`);
-        if (res.data.results && res.data.results.length > 0) {
-          translationsMap.value[verse] = res.data.results[0].text;
+      Object.keys(groupedByPage).forEach(page => {
+        const newItems = removeDuplicatesById(groupedByPage[page]);
+        const existingPage = filteredItems.value.find(p => p.page === Number(page));
+        if (existingPage) {
+          existingPage.items = removeDuplicatesById([...existingPage.items, ...newItems]);
+        } else {
+          filteredItems.value.push({ page: Number(page), items: newItems });
         }
-      } catch (err) {
-        console.error('خطا در دریافت ترجمه همزمان:', err);
-      }
+      });
+
+      filteredItems.value.sort((a, b) => a.page - b.page);
+      filteredItems.value.forEach(pg => {
+        pg.items = removeDuplicatesById(pg.items);
+      });
+
+      // بارگذاری ترجمه‌ها همزمان
+      await Promise.all([...allVerseNumbers].map(async verse => {
+        try {
+          const res = await axios.get(
+            `http://localhost:8000/api/v1/quran/verse/translation/?verse=${verse}&translator=6&surah=${surah.id}`
+          );
+          if (res.data.results?.length) {
+            translationsMap.value[verse] = res.data.results[0].text;
+          }
+        } catch (err) {
+          console.error('خطا در دریافت ترجمه همزمان:', err);
+        }
+      }));
+
+      // بارگذاری فونت‌ها
+      allFontSet.forEach(fontStr => {
+        const [fontName, fontPage] = fontStr.split('|');
+        loadFont(fontName, fontPage);
+      });
+    }
+    // بارگذاری سوره‌ها در surahTitleItems و store
+    if (response.data.results.length > 0) {
+      // اولین سوره
+      const firstSurah = response.data.results[0];
+      surahTitleItems.value = [firstSurah];
+
+      // ذخیره در store
+      store.dispatch('updateCurrentSurah', {
+        id: firstSurah.id,
+        name: firstSurah.name,
+        aya_count: firstSurah.verse_count,
+        automatic_sound: false, // یا true اگر خواستید
+      });
+
+      // مقدار verse_count هم بروز می‌شود
+      verse_count.value = firstSurah.verse_count;
     }
 
-    nextVersesUrl.value = surah.verses?.next || null;
-
-    // بارگذاری صفحات بعدی به‌صورت خودکار
-    if (nextVersesUrl.value) {
-      await loadSurah(nextVersesUrl.value);
+    // next page (pagination)
+    if (type === "juz") {
+      // بررسی برای همه سوره‌ها
+      for (const surah of response.data.results) {
+        const nextUrl = surah.verses?.next;
+        if (nextUrl) {
+          await loadSurah(type, value, nextUrl);
+        }
+      }
+    } else {
+      // حالت سوره‌ای
+      const nextVersesUrl = response.data.results[0].verses?.next || null;
+      if (nextVersesUrl) {
+        await loadSurah(type, value, nextVersesUrl);
+      }
     }
 
   } catch (err) {
@@ -1009,6 +1069,10 @@ const loadSurah = async (url = null) => {
     isLoadingSurah.value = false;
   }
 };
+
+
+
+console.log(surahTitleItems.value)
 
 // پخش صوت کلمه
 const playAudioWord = (word, surah = surahno.value) => {
@@ -1080,12 +1144,13 @@ const removeDiacritics = (text) => {
 };
 
 const searchWord = (word) => {
-  const cleanedWord = removeDiacritics(word);
+  const cleanedWord = normalizeArabicToPersian(word);
   router.push({
     name: 'Search',
     query: { query: cleanedWord }
   });
 };
+
 
 const selectedWord = ref(null);
 const selectedCategory = ref("weak");
@@ -1144,17 +1209,182 @@ const switchTab = (tab) => {
   activeTab2.value = tab;
 };
 
-// واکنش به تغییر props.id_sure
+watch(displayMode, (newVal) => {
+  // trigger computed property
+  console.log("Display mode changed to:", newVal);
+});
+
 watch(
-  () => props.id_sure,
+  () => route.fullPath,
+  () => {
+    resetSurah();
+    isLoadingSurah.value = true;
+
+    if (route.name === "quran-surah") {
+      surahno.value = Number(route.params.surahno);
+      selectedSurah.value = surahno.value;
+      activeGoToTab.value = "verse"; // ← اضافه کنید
+      loadSurah("surah", surahno.value);
+    } 
+    else if (route.name === "quran-juz") {
+      selectedJuz.value = Number(route.params.juzno);
+      activeGoToTab.value = "juz"; // ← اضافه کنید
+      loadSurah("juz", selectedJuz.value);
+    } 
+    else if (route.name === "quran-page") {
+      selectedPage.value = Number(route.params.pageno);
+      activeGoToTab.value = "page"; // ← اضافه کنید
+      loadSurah("page", selectedPage.value);
+    }
+  },
+  { immediate: true }
+);
+
+
+watch(
+  () => filteredItems.value.length,
   (newVal) => {
-    surahno.value = newVal;
+    if (newVal) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const ayaNumber = urlParams.get('aya');
+      if (ayaNumber) {
+        nextTick(() => {
+          const element = document.getElementById(`ayah-${ayaNumber}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+      }
+    }
+  }
+);
+
+const updateHiddenAyas = computed(() => {
+  const hiddenWordIds = new Set();
+
+  filteredItems.value.forEach(pageGroup => {
+    const items = pageGroup.items;
+
+    // حذف آیتم‌هایی که verse_number ندارند
+    const words = items.filter(w => w.type === 1 && w.verse_number != null);
+
+    // محاسبه اولین و آخرین آیه هر صفحه
+    const versesInPage = [...new Set(words.map(i => i.verse_number))];
+    const firstVerse = Math.min(...versesInPage);
+    const lastVerse = Math.max(...versesInPage);
+
+    // اولین و آخرین کلمه هر صفحه
+    const firstWord = words[0];
+    const lastWord = words[words.length - 1];
+
+    // اولین و آخرین کلمه هر خط
+    const firstWordsByLine = {};
+    const lastWordsByLine = {};
+    words.forEach(w => {
+      if (!firstWordsByLine[w.line]) firstWordsByLine[w.line] = w;
+      lastWordsByLine[w.line] = w;
+    });
+
+    words.forEach(word => {
+      const vNum = word.verse_number;
+      const wNum = word.word_number;
+
+      switch(displayMode.value) {
+        case 'full':
+          break;
+
+        case 'start':
+          // فقط اولین کلمه هر آیه
+          const firstWordOfVerse = words.find(w => w.verse_number === vNum);
+          if (word !== firstWordOfVerse) hiddenWordIds.add(word.id);
+          break;
+
+        case 'end':
+          const lastWordOfVerse = words.filter(w => w.verse_number === vNum).slice(-1)[0];
+          if (word !== lastWordOfVerse) hiddenWordIds.add(word.id);
+          break;
+
+        case 'start_end':
+          const verseWords = words.filter(w => w.verse_number === vNum);
+          if (word !== verseWords[0] && word !== verseWords[verseWords.length - 1]) hiddenWordIds.add(word.id);
+          break;
+
+        case 'page_word_start':
+          if (word !== firstWord) hiddenWordIds.add(word.id);
+          break;
+
+        case 'page_word_end':
+          if (word !== lastWord) hiddenWordIds.add(word.id);
+          break;
+
+        case 'page_word_start_end':
+          if (word !== firstWord && word !== lastWord) {
+            hiddenWordIds.add(word.id);
+          }
+          break;
+
+
+
+        case 'page_verse_start':
+          if (vNum !== firstVerse) hiddenWordIds.add(word.id);
+          break;
+
+        case 'page_verse_end':
+          if (vNum !== lastVerse) hiddenWordIds.add(word.id);
+          break;
+
+        case 'page_verse_start_end':
+          if (vNum !== firstVerse && vNum !== lastVerse) hiddenWordIds.add(word.id);
+          break;
+
+        case 'even':
+          if (vNum % 2 !== 0) hiddenWordIds.add(word.id);
+          break;
+
+        case 'odd':
+          if (vNum % 2 === 0) hiddenWordIds.add(word.id);
+          break;
+
+        case 'multiple5':
+          if (vNum % 5 !== 0) hiddenWordIds.add(word.id);
+          break;
+
+        case 'number_only':
+          hiddenWordIds.add(word.id);
+          break;
+
+        default:
+          break;
+      }
+    });
+  });
+
+  return hiddenWordIds;
+});
+
+
+
+watch(
+  () => route.params.surahno,
+  (newVal) => {
+    surahno.value = Number(newVal);
     resetSurah();
     isLoadingSurah.value = true;
     loadSurah();
   },
   { immediate: true }
 );
+// واکنش به تغییر props.id_sure
+watch(
+  () => surahno.value,
+  () => {
+    resetSurah();
+    isLoadingSurah.value = true;
+    loadSurah();
+  },
+  { immediate: true }
+);
+
 </script>
 
 
@@ -1212,8 +1442,9 @@ watch(
 }
 
 .surah-title {
+  font-family: 'QCF_BSML' !important;
   color: white;
-  font-size: 1.8rem;
+  font-size: 2.8rem;
 }
 
 .bg-audio {
@@ -1449,16 +1680,88 @@ watch(
 
 .ayah-highlight {
   background-color: rgba(9, 164, 253, 0.452); /* طلایی شفاف */
-  border-radius: 6px;
+  /* border-radius: 6px; */
   transition: background-color 0.3s ease;
 }
 
 
 .hover-highlight {
   background-color: #3636367a; /* رنگ توسی دلخواه */
-  border-radius: 3px;
+  /* border-radius: 3px; */
   transition: background-color 0.2s;
 }
+
+/* --------------------------------------------------- */
+
+/* تب‌ها - همه سایزها */
+.nav-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem; /* فاصله بین تب‌ها */
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: wrap; /* اجازه خط جدید اگر لازم بود */
+  margin-bottom: 1rem;
+}
+
+.nav-tabs .nav-item {
+  flex-shrink: 0; /* جلوگیری از کوچک شدن بیش از حد */
+}
+
+.nav-tabs .nav-link {
+  /* background-color: var(--bg-dark-light); */
+  color: #fff;
+  border: none;
+  /* border-radius: 12px; */
+  padding: 0.5rem 1rem;
+  /* font-size: 1rem; */
+  transition: all 0.2s ease;
+  white-space: nowrap; /* جلوگیری از شکستن متن */
+}
+
+.nav-tabs .nav-link.active {
+  /* background-color: #00bfff; */
+  color: #000;
+  /* font-weight: bold; */
+}
+
+/* هاور روی تب‌ها */
+.nav-tabs .nav-link:hover {
+  /* background-color: rgba(0, 191, 255, 0.3); */
+    color: #000;
+
+}
+
+/* ریسپانسیو دقیق سایزها */
+@media (max-width: 1200px) { /* لپتاپ و تبلت بزرگ */
+  .nav-tabs .nav-link {
+    padding: 0.45rem 0.9rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 992px) { /* تبلت */
+  .nav-tabs .nav-link {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) { /* موبایل */
+  .nav-tabs .nav-link {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 576px) { /* موبایل کوچک */
+  .nav-tabs .nav-link {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+
+/* --------------------------------------------------- */
 
 /* مودال سفارشی */
 .modal-content {
@@ -1552,20 +1855,16 @@ watch(
 }
 
 
-/* نوبار فیکس کناری */
-
-
+/* نوبار اصلی (دسکتاپ و تبلت) */
 .sidebar {
   position: fixed;
-  /* bottom: 20px; */
   left: 22%;
-  /* bottom: 50%; */
   top: 35%;
   transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
-  gap: -3px;
-  background-color: var(--bg-dark-light);
+  flex-direction: column; /* عمودی برای سایزهای بزرگ */
+  gap: 5px;
+  background-color: var(--bg-dark);
   padding: 3px 5px;
   border-radius: 30px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -1589,17 +1888,47 @@ watch(
   cursor: pointer;
   font-size: 1.2rem;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-btn:hover {
-  /* background-color: #0dcaf0; */
   transform: scale(1.05);
 }
 
-/* دکمه فعال */
 .btn-active {
   background-color: #00bfff;
 }
+
+/* ریسپانسیو موبایل */
+@media (max-width: 768px) {
+  .sidebar {
+    left: 50%;
+    bottom: 8%;
+    top: auto;
+    transform: translateX(-50%);
+    flex-direction: row; /* افقی شدن فقط در موبایل */
+    gap: 6px;
+    border-radius: 20px 20px 0 0;
+    padding: 5px 8px;
+    width: 95%; /* جا دادن همه دکمه‌ها */
+    justify-content: center;
+    flex-wrap: wrap; /* جلوگیری از بیرون زدن دکمه‌ها */
+  }
+  
+  .sidebar-btn {
+    font-size: 0.60rem; /* کوچک‌تر کردن آیکون */
+    padding: 2px;
+    min-width: 25px;
+    min-height: 25px;
+  }
+
+  .sidebar-btn i {
+    font-size: 0.9rem;
+  }
+}
+
 
 /* دکمه تغییر وضعیت نوبار */
 .toggle-btn {
@@ -1618,6 +1947,32 @@ watch(
   color: #0dcaf0;
 }
 
+.fixed-btn {
+  position: fixed;
+  left: 0;
+  top: 35%;
+  transform: translateY(-50%);
+  z-index: 1050;
+  border-radius: 0 12px 12px 0;
+  background-color: var(--bg-darker); 
+  color: var(--text-light);
+  font-weight: bold;
+  padding: 5px 10px;
+  width: 60px;
+  height: 80px;
+}
+.fixed-btn i {
+  font-size: 28px;
+}
+.fixed-btn small {
+  font-size: 12px;
+}
+.fixed-btn:hover {
+  background-color: #0054a1;
+}
+
+
+
 /* اسکرول سفارشی */
 .custom-offcanvas::-webkit-scrollbar {
   width: 6px;
@@ -1626,6 +1981,7 @@ watch(
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
 }
+
 
 
 </style>
